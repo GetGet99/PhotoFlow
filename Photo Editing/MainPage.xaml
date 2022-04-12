@@ -1,0 +1,227 @@
+﻿<Page
+    x:Class="PhotoEditing.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:PhotoEditing"
+	xmlns:cg="using:CustomGrid"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+	xmlns:wuxc="using:Windows.UI.Xaml.Controls"
+    mc:Ignorable="d">
+    <Page.Resources>
+        <!--This top margin is the height of the custom TitleBar-->
+        <Thickness x:Key="NavigationViewContentMargin">0,48,0,0</Thickness>
+        <Thickness x:Key="NavigationViewContentGridBorderThickness">0</Thickness>
+        <SolidColorBrush x:Key="NavigationViewContentBackground" Color="Transparent"></SolidColorBrush>
+        <DataTemplate x:Name="CommandButtonTemplate" x:DataType="local:CommandButtonBase">
+            <Border Width="50" Height="50" Margin="4"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    CornerRadius="8">
+                <SymbolIcon Symbol="{x:Bind Icon}" Width="30" Height="30"/>
+            </Border>
+        </DataTemplate>
+    </Page.Resources>
+    <cg:RowGrid>
+        <cg:ColumnGrid
+			x:Name="EntireTitleBar"
+			Background="{ThemeResource LayerFillColorDefaultBrush}"
+			Grid.Row="0"
+			Height="100"
+			cg:CustomGrid.GridType="Auto"
+		>
+            <StackPanel Orientation="Horizontal" Grid.Column="0" cg:CustomGrid.GridType="Auto">
+                <Image x:Name="AppFontIcon"
+                    HorizontalAlignment="Left" 
+                    VerticalAlignment="Center"
+                    Source="Assets/Square44x44Logo.png" 
+                    Width="16"
+                    Margin="12,0,12,0"
+                    Height="16"/>
+                <muxc:MenuBar VerticalAlignment="Center" Margin="0">
+                    <muxc:MenuBarItem Title="File" Margin="0" CornerRadius="10">
+                        <MenuFlyoutItem Text="New" Icon="Add" Click="New">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="N" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="New from Clipboard" Icon="Copy" Click="New">
+                            <!--<MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="N" Modifiers="Control,Shift"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>-->
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Open" Icon="OpenFile" Click="OpenFile" AccessKey="O">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="O" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+						<MenuFlyoutItem Text="Insert" Icon="OpenFile" Click="InsertFile" AccessKey="O">
+							<MenuFlyoutItem.KeyboardAccelerators>
+								<KeyboardAccelerator Key="O" Modifiers="Control,Shift"/>
+							</MenuFlyoutItem.KeyboardAccelerators>
+						</MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Save" Icon="Save" Click="SaveFile" AccessKey="S">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="S" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                    </muxc:MenuBarItem>
+
+                    <muxc:MenuBarItem Title="Edit" Margin="0" CornerRadius="10">
+                        <MenuFlyoutItem Text="Undo" Icon="Undo" IsEnabled="False">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="Z" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Redo" Icon="Redo" IsEnabled="False">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="Y" Modifiers="Control"/>
+                                <KeyboardAccelerator Key="Z" Modifiers="Control,Shift"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Cut" Icon="Cut" IsEnabled="False">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="X" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Copy" Icon="Copy" IsEnabled="False">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="C" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Paste" Icon="Paste" IsEnabled="False">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="V" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                    </muxc:MenuBarItem>
+                    <muxc:MenuBarItem Title="Image" Margin="0" CornerRadius="10">
+                        <MenuFlyoutItem Text="Invert" Click="Invert"/>
+                    </muxc:MenuBarItem>
+                    <muxc:MenuBarItem Title="Window" Margin="0" CornerRadius="10">
+                        <MenuFlyoutItem Text="Reload" Click="ReloadWindow"/>
+                        <MenuFlyoutItem Text="New" Click="NewWindow"/>
+                    </muxc:MenuBarItem>
+                </muxc:MenuBar>
+            </StackPanel>
+            <Border
+                Grid.Column="1"
+                x:Name="AppTitleBar"
+                IsHitTestVisible="True"
+                Background="Transparent"
+                Canvas.ZIndex="1"
+                VerticalAlignment="Stretch"
+                cg:CustomGrid.GridType="Star"
+            />
+        </cg:ColumnGrid>
+        
+        
+        <Border
+            x:Name="CommandBarPlace"
+            Grid.Row="1"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            CornerRadius="8"
+            Margin="15,15,15,0"
+			cg:CustomGrid.GridType="Auto"
+        >
+        </Border>
+        <cg:ColumnGrid cg:CustomGrid.GridType="Star">
+            <GridView
+                Margin="15"
+                x:Name="CommandBar"
+                ItemsSource="{x:Bind Buttons}"
+                ItemTemplate="{StaticResource CommandButtonTemplate}"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                CornerRadius="8"
+                IsItemClickEnabled="True"
+                SelectionMode="Single"
+				cg:CustomGrid.GridType="Pixel"
+				cg:CustomGrid.GridValue="100"
+            >
+                <GridView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <ItemsWrapGrid HorizontalAlignment="Center" Orientation="Horizontal">
+                        </ItemsWrapGrid>
+                    </ItemsPanelTemplate>
+                </GridView.ItemsPanel>
+            </GridView>
+            <ScrollViewer
+                Margin="0,15,0,15"
+                CornerRadius="8"
+                x:Name="MainScrollView"
+                MinZoomFactor="0.2"
+                HorizontalScrollMode="Auto" HorizontalScrollBarVisibility="Auto"
+                VerticalScrollMode="Auto" VerticalScrollBarVisibility="Auto"
+                ZoomMode="Enabled"
+                IsScrollInertiaEnabled="True"
+				cg:CustomGrid.GridType="Star"
+				Background="{ThemeResource LayerFillColorDefaultBrush}"
+            >
+				<Border
+					x:Name="LayerContainerBackground"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					Background="{ThemeResource LayerFillColorDefaultBrush}"
+				>
+                    <ScrollViewer
+					    x:Name="LayerContainerMasker"
+					    HorizontalScrollMode="Disabled"
+					    HorizontalScrollBarVisibility="Disabled"
+					    VerticalScrollMode="Disabled"
+					    VerticalScrollBarVisibility="Disabled"
+					    ZoomMode="Disabled">
+					    <local:LayerContainer x:Name="LayerContainer">
+                        </local:LayerContainer>
+                    </ScrollViewer>
+				</Border>
+                
+
+            </ScrollViewer>
+			<Border
+				Background="{ThemeResource LayerFillColorDefaultBrush}"
+                CornerRadius="8"
+				cg:CustomGrid.GridType="Pixel"
+				cg:CustomGrid.GridValue="300"
+                Margin="15,15,24,15"
+			>
+				<cg:RowGrid
+                x:Name="RightPanel"
+                >
+					<local:Pane
+						Grid.Row="0"
+						Title="Properties"
+						cg:CustomGrid.GridType="Star"
+						cg:CustomGrid.GridValue="1"
+                    ></local:Pane>
+					<local:Pane
+						Grid.Row="1"
+						Title="Layers"
+						x:Name="LayerPanel"
+						cg:CustomGrid.GridType="Star"
+						cg:CustomGrid.GridValue="1"
+                    ></local:Pane>
+				</cg:RowGrid>
+			</Border>
+        </cg:ColumnGrid>
+        <StackPanel
+            Grid.Row="3"
+            Height="30"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            CornerRadius="8"
+            VerticalAlignment="Center"
+            Orientation="Horizontal"
+			cg:CustomGrid.GridType="Auto"
+        >
+            <TextBlock VerticalAlignment="Center" Text="Zoom:" Margin="0,0,3,0">
+            </TextBlock>
+            <TextBlock x:Name="Zoom" VerticalAlignment="Center">
+                100
+            </TextBlock>
+            <TextBlock VerticalAlignment="Center">
+                %
+            </TextBlock>
+        </StackPanel>
+
+    </cg:RowGrid>
+
+</Page>

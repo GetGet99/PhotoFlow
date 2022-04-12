@@ -1,0 +1,44 @@
+﻿<Grid
+    x:Class="PhotoEditing.LayerPreview"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:PhotoEditing"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Height="50"
+    d:DesignWidth="250"
+    CornerRadius="8">
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="50"/>
+        <ColumnDefinition Width="*"/>
+    </Grid.ColumnDefinitions>
+    <Image x:Name="Image" Grid.Column="0" Margin="8"/>
+    <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal">
+        <TextBlock x:Name="LayerNameTextBlock" HorizontalAlignment="Left" Text="Layer Name" Margin="0,0,8,0"/>
+    </StackPanel>
+    <Button x:Name="ButtonOverlay" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0" CornerRadius="0" Background="Transparent" BorderBrush="Transparent" BorderThickness="0">
+        <Button.Resources>
+            <ResourceDictionary>
+                <ResourceDictionary.ThemeDictionaries>
+                    <ResourceDictionary x:Key="Dark">
+                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="Transparent"/>
+                    </ResourceDictionary>
+                    <ResourceDictionary x:Key="Light">
+                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="Transparent"/>
+                    </ResourceDictionary>
+                </ResourceDictionary.ThemeDictionaries>
+            </ResourceDictionary>
+        </Button.Resources>
+        <Button.ContextFlyout>
+            <CommandBarFlyout x:Name="RightClickCommand">
+                <AppBarButton Label="Rename" Icon="Rename" Click="Rename" AccessKey="R"/>
+                <AppBarButton Label="Duplicate" Icon="Copy" Click="Rename" IsEnabled="False" AccessKey="D"/>
+                <AppBarButton Label="Delete" Icon="Delete" Click="Delete" AccessKey="Delete"/>
+                <AppBarButton Label="Convert To Image" Icon="SetLockScreen" Click="ToMatLayer" AccessKey="C"/>
+                <AppBarButton Label="Save as Image" Icon="Save" Click="SaveLayerAsImage" AccessKey="S"/>
+				<AppBarButton Label="Properties" Icon="Important" Click="Properties" AccessKey="P"/>
+            </CommandBarFlyout>
+        </Button.ContextFlyout>
+    </Button>
+</Grid>

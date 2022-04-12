@@ -1,0 +1,25 @@
+﻿<local:CommandButtonCommandBar
+    x:Class="PhotoEditing.CommandButton.Controls.Move"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:PhotoEditing.CommandButton.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    mc:Ignorable="d"
+    d:DesignHeight="600"
+    d:DesignWidth="400">
+    <TextBlock Text="X" Margin="10, 0, 10, 0" VerticalAlignment="Center" />
+    <TextBox x:Name="TB_X" x:FieldModifier="Public" PlaceholderText="X" Width="100" VerticalAlignment="Center" />
+    <TextBlock Text="Y" Margin="10, 0, 10, 0" VerticalAlignment="Center" />
+    <TextBox x:Name="TB_Y" x:FieldModifier="Public" PlaceholderText="Y" Width="100" VerticalAlignment="Center" />
+    <TextBlock Text="X" Margin="10, 0, 10, 0" VerticalAlignment="Center" />
+    <Button x:Name="ResetSize" CornerRadius="5" x:FieldModifier="Public" Content="Reset Size" Margin="10, 0, 10, 0" VerticalAlignment="Center" />
+    <ToggleButton x:Name="EnableMove" CornerRadius="5" x:FieldModifier="Public" Content="Mouse/Touch/Pen Move" Margin="10, 0, 10, 0" IsChecked="True" />
+    <TextBlock Text="Scale" Margin="10, 0, 10, 0" VerticalAlignment="Center" />
+    <TextBox x:Name="TB_S" x:FieldModifier="Public" PlaceholderText="Scale" Width="100" VerticalAlignment="Center" />
+    <ToggleButton x:Name="EnableResize" x:FieldModifier="Public" Content="Touch Resize" Margin="10, 0, 10, 0" IsChecked="False" />
+    <TextBlock Text="Rotation" Margin="10, 0, 10, 0" VerticalAlignment="Center" />
+    <TextBox x:Name="TB_R" x:FieldModifier="Public" PlaceholderText="Rotation" Width="100" VerticalAlignment="Center" />
+    <ToggleButton x:Name="EnableRotate" x:FieldModifier="Public" Content="Touch Rotate" Margin="10, 0, 10, 0" IsChecked="False" />
+</local:CommandButtonCommandBar>
