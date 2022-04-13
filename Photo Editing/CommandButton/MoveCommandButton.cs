@@ -55,18 +55,21 @@ namespace PhotoEditing
         {
             var layer = CurrentLayer;
             if (layer == null) return;
-            layer.CenterPoint = new System.Numerics.Vector3((float)(layer.X + layer.ActualWidth / 2), (float)(layer.Y + layer.ActualHeight / 2), 1);
             layer.X = Convert.ToDouble(MoveCommandBar.TB_X.Text);
             layer.Y = Convert.ToDouble(MoveCommandBar.TB_Y.Text);
-            layer.Scale = new System.Numerics.Vector3(Convert.ToSingle(MoveCommandBar.TB_S.Text));
-            layer.Rotation = Convert.ToSingle(MoveCommandBar.TB_R.Text);
-            LayerContainer.InvalidateArrange();
+            layer.CenterX = layer.ActualWidth / 2;
+            layer.CenterY = layer.ActualHeight / 2;
+            var scale = Convert.ToDouble(MoveCommandBar.TB_S.Text);
+            layer.ScaleX = scale;
+            layer.ScaleY = scale;
+            layer.Rotation = Convert.ToDouble(MoveCommandBar.TB_R.Text);
+            //LayerContainer.InvalidateArrange();
         }
         void UpdateNumberFromValue()
         {
             MoveCommandBar.TB_X.Text = CurrentLayer.X.ToString("G");
             MoveCommandBar.TB_Y.Text = CurrentLayer.Y.ToString("G");
-            MoveCommandBar.TB_S.Text = ((CurrentLayer.Scale.X + CurrentLayer.Scale.Y) / 2).ToString("G");
+            MoveCommandBar.TB_S.Text = ((CurrentLayer.ScaleX + CurrentLayer.ScaleY) / 2).ToString("G");
             MoveCommandBar.TB_R.Text = CurrentLayer.Rotation.ToString("G");
         }
         private void ManipulationDeltaEvent(object sender, ManipulationDeltaRoutedEventArgs e)
@@ -85,13 +88,15 @@ namespace PhotoEditing
                 //posY = p.Y;
             }
 
+            var scale = (layer.ScaleX + layer.ScaleY) / 2 * e.Delta.Scale;
+            layer.ScaleX = scale;
+            layer.ScaleY = scale;
             var delta = e.Delta.Translation;
-            layer.CenterPoint = new System.Numerics.Vector3((float)(layer.X + layer.ActualWidth / 2), (float)(layer.Y + layer.ActualHeight / 2), 1); //new System.Numerics.Vector3((float)posX, (float)posY, 1);
             layer.X += delta.X;
             layer.Y += delta.Y;
+            layer.CenterX = layer.ActualWidth / 2;
+            layer.CenterY = layer.ActualHeight / 2;
             layer.Rotation += e.Delta.Rotation;
-            var scaledelta = e.Delta.Scale;
-            layer.Scale *= new System.Numerics.Vector3(scaledelta, scaledelta, 1);
             e.Handled = true;
             UpdateNumberFromValue();
         }

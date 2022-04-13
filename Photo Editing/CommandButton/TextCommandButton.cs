@@ -19,22 +19,46 @@ namespace PhotoEditing
 
         public TextCommandButton(Border CommandBarPlace) : base(Symbol.Font, CommandBarPlace)
         {
-            TextCommandBar.CreateNewLayer.Click += (_, _1) => AddNewLayer(new Layer.TextLayer(new Windows.Foundation.Point(0,0), "Test Text"));
-        }
-        protected override void RequestAddLayerEvent(Layer.Layer Layer)
-        {
-            base.RequestAddLayerEvent(Layer);
-            if (Layer.LayerType == PhotoEditing.Layer.Types.Text)
+            TextCommandBar.CreateNewLayer.Click += (_, _1) => {
+                var newLayer = new Layer.TextLayer(new Windows.Foundation.Point(0, 0), "Text");
+                newLayer.LayerName.Value = "Text Layer";
+                AddNewLayer(newLayer);
+            };
+            TextCommandBar.TextBox.TextChanged += (_, _1) =>
             {
-                (Layer as Layer.TextLayer).TextBox.IsEnabled = true;
-            }
-        }
-        protected override void RequestRemoveLayerEvent(Layer.Layer Layer)
-        {
-            base.RequestRemoveLayerEvent(Layer);
-            if (Layer.LayerType == PhotoEditing.Layer.Types.Text)
+                if (CurrentLayer is Layer.TextLayer Layer)
+                    Layer.Text = TextCommandBar.TextBox.Text;
+            };
+            TextCommandBar.Font.TextChanged += (_, e) =>
             {
-                (Layer as Layer.TextLayer).TextBox.IsEnabled = false;
+                if (e.Reason == AutoSuggestionBoxTextChangeReason.SuggestionChosen)
+                {
+                    if (CurrentLayer is Layer.TextLayer Layer)
+                        Layer.Font = new Windows.UI.Xaml.Media.FontFamily(TextCommandBar.Font.Text);
+                }
+            };
+            TextCommandBar.FontSize.ValueChanged += (_, e) =>
+            {
+                if (CurrentLayer is Layer.TextLayer Layer)
+                    Layer.FontSize = TextCommandBar.FontSize.Value;
+            };
+            //TextCommandBar.Font.LostFocus += (_, _1) =>
+            //{
+            //    if (CurrentLayer is Layer.TextLayer Layer)
+            //        TextCommandBar.Font.Text = Layer.Font.Source;
+            //};
+        }
+        protected override void LayerChanged(Layer.Layer Layer)
+        {
+            base.LayerChanged(Layer);
+            if (Layer == null) return;
+            TextCommandBar.LayerEditorControls.Visibility =
+                Layer.LayerType == PhotoEditing.Layer.Types.Text ? Visibility.Visible : Visibility.Collapsed;
+            if (Layer is Layer.TextLayer TextLayer)
+            {
+                TextCommandBar.TextBox.Text = TextLayer.Text;
+                TextCommandBar.Font.Text = TextLayer.Font.Source;
+                TextCommandBar.FontSize.Value = TextLayer.FontSize.Value;
             }
         }
     }

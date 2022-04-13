@@ -79,7 +79,13 @@ namespace PhotoEditing
             {
                 arrTask[i] = Task.Factory.StartNew(delegate
                 {
-                    arr[i] = func(item);
+                    try
+                    {
+                        arr[i] = func(item);
+                    } catch (Exception e)
+                    {
+                        System.Diagnostics.Debugger.Break();
+                    }
                 });
             }
             await arrTask.AwaitAllAsync();

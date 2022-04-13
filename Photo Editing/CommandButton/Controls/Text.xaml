@@ -10,5 +10,13 @@
     d:DesignHeight="600"
     d:DesignWidth="400">
     <Button x:Name="CreateNewLayer" x:FieldModifier="Public" Content="Create New Text Layer" Margin="0,0,10,0"/>
-    
+    <StackPanel x:FieldModifier="Public" x:Name="LayerEditorControls" Orientation="Horizontal" VerticalAlignment="Center">
+        <TextBlock Text="Text:" VerticalAlignment="Center"/>
+        <TextBox x:FieldModifier="Public" x:Name="TextBox" Margin="16,0,16,0" Width="300"/>
+        <TextBlock Text="Font:" VerticalAlignment="Center"/>
+        <AutoSuggestBox x:Name="Font" x:FieldModifier="Public" Margin="16,0,16,0" Width="200"/>
+        <TextBlock Text="Font Size:" VerticalAlignment="Center"/>
+        <muxc:NumberBox x:Name="FontSize" x:FieldModifier="Public" Margin="16,0,16,0" Width="100"/>
+    </StackPanel>
+
 </local:CommandButtonCommandBar>

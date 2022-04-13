@@ -46,30 +46,41 @@ namespace PhotoEditing.Layer
 
         public abstract Types LayerType { get; }
         public VariableUpdateAlert<string> LayerName { get; } = new VariableUpdateAlert<string>() { Value = "Unnamed Layer" };
-        public Vector3 CenterPoint
+        public double CenterX
         {
-            get => LayerUIElement.CenterPoint;
-            set => LayerUIElement.CenterPoint = value;
+            get => RenderTransform.CenterX;
+            set => RenderTransform.CenterX = value;
         }
+        public double CenterY
+        {
+            get => RenderTransform.CenterY;
+            set => RenderTransform.CenterY = value;
+        }
+        public CompositeTransform RenderTransform => (CompositeTransform)LayerUIElement.RenderTransform;
         public double X
         {
-            set => LayerUIElement.SetValue(LayerContainer.XProperty, value);
-            get => (double)LayerUIElement.GetValue(LayerContainer.XProperty);
+            set => RenderTransform.TranslateX = value;
+            get => RenderTransform.TranslateX;
         }
         public double Y
         {
-            set => LayerUIElement.SetValue(LayerContainer.YProperty, value);
-            get => (double)LayerUIElement.GetValue(LayerContainer.YProperty);
+            set => RenderTransform.TranslateY = value;
+            get => RenderTransform.TranslateY;
         }
-        public float Rotation
+        public double Rotation
         {
-            get => LayerUIElement.Rotation;
-            set => LayerUIElement.Rotation = value;
+            get => RenderTransform.Rotation;
+            set => RenderTransform.Rotation = value;
         }
-        public Vector3 Scale
+        public double ScaleX
         {
-            get => LayerUIElement.Scale;
-            set => LayerUIElement.Scale = value;
+            get => RenderTransform.ScaleX;
+            set => RenderTransform.ScaleX = value;
+        }
+        public double ScaleY
+        {
+            get => RenderTransform.ScaleY;
+            set => RenderTransform.ScaleY = value;
         }
         public double Width
         {
@@ -86,9 +97,11 @@ namespace PhotoEditing.Layer
         public JObject SaveData()
         {
             var save = OnDataSaving();
-            double X = 0, Y = 0, Width = 0, Height = 0;
-            float Rotation = 0;
-            Vector3 Scale = Vector3.Zero, CenterPoint = Vector3.Zero;
+            double X = 0, Y = 0,
+                Width = 0, Height = 0,
+                Rotation = 0,
+                ScaleX = 0, ScaleY = 0,
+                CenterX = 0, CenterY = 0;
             LayerUIElement.Dispatcher.RunAsync(CoreDispatcherPriority.High, () =>
             {
                 X = this.X;
@@ -96,19 +109,21 @@ namespace PhotoEditing.Layer
                 Width = this.Width;
                 Height = this.Height;
                 Rotation = this.Rotation;
-                Scale = this.Scale;
-                CenterPoint = this.CenterPoint;
+                ScaleX = this.ScaleX;
+                ScaleY = this.ScaleY;
+                CenterX = this.CenterX;
+                CenterY = this.CenterY;
             }).AsTask().Wait();
             return new JObject(
                 new JProperty("LayerName", LayerName.Value),
                 new JProperty("LayerType", LayerType),
-                new JProperty("CenterPoint", new float[] { CenterPoint.X, CenterPoint.Y, CenterPoint.Z }),
+                new JProperty("CenterPoint", new double[] { CenterX, CenterY }),
                 new JProperty("X", X),
                 new JProperty("Y", Y),
                 new JProperty("Width", Width),
                 new JProperty("Height", Height),
                 new JProperty("Rotation", Rotation),
-                new JProperty("Scale", new float[] { Scale.X, Scale.Y, Scale.Z }),
+                new JProperty("Scale", new double[] { ScaleX, ScaleY }),
                 new JProperty("AdditionalData", save)
             );
         }
@@ -116,24 +131,24 @@ namespace PhotoEditing.Layer
         public void LoadData(JObject json)
         {
             LayerName.Value = json["LayerName"].ToObject<string>();
-            var centerpoint = json["CenterPoint"].ToObject<float[]>();
-            var scale = json["Scale"].ToObject<float[]>();
+            var CenterPoint = json["CenterPoint"].ToObject<double[]>();
+            var Scale = json["Scale"].ToObject<double[]>();
 
-            var CenterPoint = new Vector3(centerpoint[0], centerpoint[1], centerpoint[2]);
             var X = json["X"].ToObject<double>();
             var Y = json["Y"].ToObject<double>();
-            var Rotation = json["Rotation"].ToObject<float>();
-            var Scale = new Vector3(scale[0], scale[1], scale[2]);
+            var Rotation = json["Rotation"].ToObject<double>();
             var Width = json["Width"].ToObject<double>();
             var Height = json["Height"].ToObject<double>();
 
             var Task = Extension.RunOnUIThreadAsync(() =>
             {
-                this.CenterPoint = CenterPoint;
+                CenterX = CenterPoint[0];
+                CenterY = CenterPoint[1];
                 this.X = X;
                 this.Y = Y;
                 this.Rotation = Rotation;
-                this.Scale = Scale;
+                ScaleX = Scale[0];
+                ScaleY = Scale[1];
                 this.Width = Width;
                 this.Height = Height;
             });
@@ -178,7 +193,8 @@ namespace PhotoEditing.Layer
                 {
                     BorderThickness = new Thickness(2),
                     CanBeScrollAnchor = false,
-                    IsHitTestVisible = false
+                    IsHitTestVisible = false,
+                    RenderTransform = new CompositeTransform()
                 };
             });
             LayerName.Update += (oldVal, newVal) =>
@@ -481,13 +497,40 @@ namespace PhotoEditing.Layer
     public class TextLayer : Layer
     {
         public override Types LayerType { get; } = Types.Text;
-        public TextBox TextBox { get; private set; }
-        public string Text { get; set; }
+        public TextBlock TextBlock { get; private set; }
+        string _Text;
+        public string Text { get => TextBlock.Text;
+            set {
+                _Text = value;
+                if (TextBlock != null) TextBlock.Text = value;
+            }
+        }
+        FontFamily _Font;
+        public FontFamily Font
+        {
+            get => TextBlock.FontFamily;
+            set
+            {
+                _Font = value;
+                if (TextBlock != null) TextBlock.FontFamily = value;
+            }
+        }
+        double? _FontSize;
+        public double? FontSize
+        {
+            get => TextBlock.FontSize;
+            set
+            {
+                _FontSize = value;
+                if (TextBlock != null && value.HasValue) TextBlock.FontSize = value.Value;
+            }
+        }
+
         public TextLayer(JObject json)
         {
             LoadData(json);
             OnCreate();
-            
+
         }
         public TextLayer(Windows.Foundation.Point Where, string Text)
         {
@@ -496,31 +539,50 @@ namespace PhotoEditing.Layer
             this.Text = Text;
             OnCreate();
         }
-        protected override void OnCreate() {
+        protected override void OnCreate()
+        {
             Extension.RunOnUIThread(() =>
             {
-                TextBox = new TextBox()
+                TextBlock = new TextBlock()
                 {
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     VerticalAlignment = VerticalAlignment.Stretch,
                     CanBeScrollAnchor = false,
-                    Text = Text,
-                    IsEnabled = false
+                    Text = _Text
                 };
-                TextBox.TextChanged += (_, _1) => Text = TextBox.Text;
-                TextBox.Background = new SolidColorBrush(Colors.Transparent);
-                TextBox.IsEnabledChanged += (_, _1) =>
-                {
-                    
-                };
-                LayerUIElement.Children.Add(TextBox);
+                if (_Font != null) TextBlock.FontFamily = _Font;
+                if (_FontSize.HasValue) TextBlock.FontSize = _FontSize.Value;
+
+                LayerUIElement.Children.Add(TextBlock);
             });
         }
         public override void Dispose() { }
-        protected override JObject OnDataSaving() => new JObject(
-            new JProperty("Text", Text)
-        );
+        protected override JObject OnDataSaving()
+        {
+            string Text = "", FontFamily = "";
+            double FontSize = default;
+            Extension.RunOnUIThread(() =>
+            {
+                Text = this.Text;
+                FontFamily = Font.Source;
+                FontSize = this.FontSize.Value;
+            });
+            return new JObject(
+                new JProperty("Text", Text),
+                new JProperty("FontFamily", FontFamily),
+                new JProperty("FontSize", FontSize)
+            );
+        }
 
-        protected override void OnDataLoading(JObject json, Task _) => Text = json["Text"].ToObject<string>();
+        protected override void OnDataLoading(JObject json, Task _)
+        {
+            Extension.RunOnUIThread(() =>
+            {
+                Text = json["Text"]?.ToObject<string>();
+                var f = json["Font"]?.ToObject<string>();
+                if (f != null) Font = new FontFamily(f);
+                FontSize = json["FontSize"]?.ToObject<double>();
+            });
+        }
     }
 }

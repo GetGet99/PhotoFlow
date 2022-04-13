@@ -21,7 +21,8 @@ namespace PhotoEditing.CommandButton.Controls
     {
         public Text()
         {
-            this.InitializeComponent();
+            InitializeComponent();
+            Font.ItemsSource = Microsoft.Graphics.Canvas.Text.CanvasTextFormat.GetSystemFontFamilies();
         }
     }
 }
