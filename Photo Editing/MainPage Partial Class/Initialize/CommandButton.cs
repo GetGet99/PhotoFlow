@@ -12,7 +12,7 @@ namespace PhotoEditing
             public VariableUpdateAlert<CommandButtonBase> Selection { get; } = new VariableUpdateAlert<CommandButtonBase>();
 
             readonly LayerContainer LayerContainer;
-            public ButtonCollection(LayerContainer LayerContainer)
+            public ButtonCollection(LayerContainer LayerContainer, ScrollViewer MainScrollViewer)
             {
                 Selection.Update += (oldValue, newValue) =>
                 {
@@ -26,6 +26,7 @@ namespace PhotoEditing
                     {
                         var nI2 = (CommandButtonBase)nI;
                         nI2.SetLayerContainer(LayerContainer);
+                        nI2.SetScrollViewer(MainScrollViewer);
                     }
                 };
             }
@@ -41,13 +42,15 @@ namespace PhotoEditing
         }
         void InitializeCommandButtons()
         {
-            Buttons = new ButtonCollection(LayerContainer)
+            Buttons = new ButtonCollection(LayerContainer, MainScrollView)
             {
                 new MoveCommandButton(CommandBarPlace),
                 new InkingCommandButton(CommandBarPlace),
                 new ImageCommandButton(CommandBarPlace),
-                new TextCommandButton(CommandBarPlace)
-            };
+                new TextCommandButton(CommandBarPlace),
+                new ShapeCommandButton(CommandBarPlace),
+            }
+            ;
             CommandBar.SelectionChanged += (o, e) =>
             {
                 Buttons.Selection.Value = (CommandButtonBase)CommandBar.SelectedItem;

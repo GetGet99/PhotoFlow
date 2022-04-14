@@ -9,6 +9,8 @@ using Windows.Devices.Input;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using PhotoEditing.CommandButton.Controls;
+using Microsoft.UI.Xaml.Controls;
+using Windows.System;
 
 namespace PhotoEditing
 {
@@ -16,7 +18,7 @@ namespace PhotoEditing
     {
         private readonly Move MoveCommandBar = new Move();
         protected override CommandButtonCommandBar CommandBar => MoveCommandBar;
-        
+
         public MoveCommandButton(Border CommandBarPlace) : base(Symbol.TouchPointer, CommandBarPlace)
         {
 
@@ -30,70 +32,73 @@ namespace PhotoEditing
             MoveCommandBar.EnableMove.Command = ilc;
             MoveCommandBar.EnableResize.Command = ilc;
             MoveCommandBar.EnableRotate.Command = ilc;
-            
-            void UpdateFromKey(object o, KeyRoutedEventArgs e)
-            {
-                if (e.Key == Windows.System.VirtualKey.Enter)
-                {
-                    UpdateNumberFromTB();
-                }
-            };
-            MoveCommandBar.TB_X.KeyDown += UpdateFromKey;
-            MoveCommandBar.TB_Y.KeyDown += UpdateFromKey;
-            MoveCommandBar.TB_R.KeyDown += UpdateFromKey;
-            MoveCommandBar.TB_S.KeyDown += UpdateFromKey;
-            void UpdateFromLostFocus(object o, RoutedEventArgs e)
-            {
-                UpdateNumberFromTB();
-            }
-            MoveCommandBar.TB_X.LostFocus += UpdateFromLostFocus;
-            MoveCommandBar.TB_Y.LostFocus += UpdateFromLostFocus;
-            MoveCommandBar.TB_R.LostFocus += UpdateFromLostFocus;
-            MoveCommandBar.TB_S.LostFocus += UpdateFromLostFocus;
+
+            //void UpdateFromKey(object o, KeyRoutedEventArgs e)
+            //{
+            //    if (e.Key == Windows.System.VirtualKey.Enter)
+            //    {
+            //        UpdateNumberFromTB();
+            //    }
+            //};
+            //MoveCommandBar.TB_X.KeyDown += UpdateFromKey;
+            //MoveCommandBar.TB_Y.KeyDown += UpdateFromKey;
+            //MoveCommandBar.TB_R.KeyDown += UpdateFromKey;
+            //MoveCommandBar.TB_S.KeyDown += UpdateFromKey;
+            void UpdateNumberFromTBEV(NumberBox _, NumberBoxValueChangedEventArgs _1)
+                => UpdateNumberFromTB();
+            MoveCommandBar.TB_X.ValueChanged += UpdateNumberFromTBEV;
+            MoveCommandBar.TB_Y.ValueChanged += UpdateNumberFromTBEV;
+            MoveCommandBar.TB_R.ValueChanged += UpdateNumberFromTBEV;
+            MoveCommandBar.TB_S.ValueChanged += UpdateNumberFromTBEV;
+            //MoveCommandBar.TB_X.LostFocus += UpdateFromLostFocus;
+            //MoveCommandBar.TB_Y.LostFocus += UpdateFromLostFocus;
+            //MoveCommandBar.TB_R.LostFocus += UpdateFromLostFocus;
+            //MoveCommandBar.TB_S.LostFocus += UpdateFromLostFocus;
         }
+
         void UpdateNumberFromTB()
         {
+            if (IsUpdatingNumberFromValue) return;
             var layer = CurrentLayer;
             if (layer == null) return;
-            layer.X = Convert.ToDouble(MoveCommandBar.TB_X.Text);
-            layer.Y = Convert.ToDouble(MoveCommandBar.TB_Y.Text);
+            layer.X = MoveCommandBar.TB_X.Value;
+            layer.Y = MoveCommandBar.TB_Y.Value;
             layer.CenterX = layer.ActualWidth / 2;
             layer.CenterY = layer.ActualHeight / 2;
-            var scale = Convert.ToDouble(MoveCommandBar.TB_S.Text);
+            var scale = MoveCommandBar.TB_S.Value;
             layer.ScaleX = scale;
             layer.ScaleY = scale;
-            layer.Rotation = Convert.ToDouble(MoveCommandBar.TB_R.Text);
+            layer.Rotation = MoveCommandBar.TB_R.Value;
             //LayerContainer.InvalidateArrange();
         }
+        bool IsUpdatingNumberFromValue = false;
         void UpdateNumberFromValue()
         {
-            MoveCommandBar.TB_X.Text = CurrentLayer.X.ToString("G");
-            MoveCommandBar.TB_Y.Text = CurrentLayer.Y.ToString("G");
-            MoveCommandBar.TB_S.Text = ((CurrentLayer.ScaleX + CurrentLayer.ScaleY) / 2).ToString("G");
-            MoveCommandBar.TB_R.Text = CurrentLayer.Rotation.ToString("G");
+            IsUpdatingNumberFromValue = true;
+            MoveCommandBar.TB_X.Value = CurrentLayer.X;
+            MoveCommandBar.TB_Y.Value = CurrentLayer.Y;
+            MoveCommandBar.TB_S.Value = (CurrentLayer.ScaleX + CurrentLayer.ScaleY) / 2;
+            MoveCommandBar.TB_R.Value = CurrentLayer.Rotation;
+            IsUpdatingNumberFromValue = false;
         }
         private void ManipulationDeltaEvent(object sender, ManipulationDeltaRoutedEventArgs e)
         {
 
             var layer = CurrentLayer;
-            //var posX = e.Position.X;
-            //var posY = e.Position.Y;
 
-
-            ////// FIRST GET TOUCH POSITION RELATIVE TO THIS ELEMENT ///
             if (e.Container != null)
             {
                 //var p = e.Container.TransformToVisual(layer.LayerUIElement).TransformPoint(new Windows.Foundation.Point(posX, posY)); //transform touch point position relative to this element
                 //posX = p.X;
                 //posY = p.Y;
             }
-
+            var ZoomFactor = this.ZoomFactor;
             var scale = (layer.ScaleX + layer.ScaleY) / 2 * e.Delta.Scale;
             layer.ScaleX = scale;
             layer.ScaleY = scale;
             var delta = e.Delta.Translation;
-            layer.X += delta.X;
-            layer.Y += delta.Y;
+            layer.X += delta.X / ZoomFactor;
+            layer.Y += delta.Y / ZoomFactor;
             layer.CenterX = layer.ActualWidth / 2;
             layer.CenterY = layer.ActualHeight / 2;
             layer.Rotation += e.Delta.Rotation;
@@ -103,12 +108,55 @@ namespace PhotoEditing
         private void PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.SizeAll, 1);
-            //LayerContainer.CancelDirectManipulations();
+            ScrollViewer.HorizontalScrollMode = ScrollMode.Disabled;
+            ScrollViewer.VerticalScrollMode = ScrollMode.Disabled;
+            ScrollViewer.ZoomMode = ZoomMode.Disabled;
         }
         private void PointerExited(object sender, PointerRoutedEventArgs e)
         {
             Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.Arrow, 1);
+            ScrollViewer.HorizontalScrollMode = ScrollMode.Enabled;
+            ScrollViewer.VerticalScrollMode = ScrollMode.Enabled;
+            ScrollViewer.ZoomMode = ZoomMode.Enabled;
         }
+
+        private void PoitnerWheel(object sender, PointerRoutedEventArgs e)
+        {
+            if (CurrentLayer is Layer.Layer Layer)
+            {
+                double dblDelta_Scroll = e.GetCurrentPoint(Layer.LayerUIElement).Properties.MouseWheelDelta;
+                switch (e.KeyModifiers)
+                {
+                    case VirtualKeyModifiers.Control:
+                        if (MoveCommandBar.EnableResize.IsChecked.Value)
+                        {
+                            dblDelta_Scroll = dblDelta_Scroll > 0 ? (dblDelta_Scroll * 0.001) : ((1 / -dblDelta_Scroll - 1) * 0.0325);
+                            dblDelta_Scroll += 1;
+                            Layer.ScaleX *= dblDelta_Scroll;
+                            Layer.ScaleY *= dblDelta_Scroll;
+                        } else
+                        {
+                            ScrollViewer.HorizontalScrollMode = ScrollMode.Enabled;
+                            ScrollViewer.VerticalScrollMode = ScrollMode.Enabled;
+                            ScrollViewer.ZoomMode = ZoomMode.Enabled;
+                            ScrollViewer.PointerReleased += delegate
+                            {
+                                ScrollViewer.HorizontalScrollMode = ScrollMode.Disabled;
+                                ScrollViewer.VerticalScrollMode = ScrollMode.Disabled;
+                                ScrollViewer.ZoomMode = ZoomMode.Disabled;
+                            };
+                            ScrollViewer.CapturePointer(e.Pointer);
+                            Layer.LayerUIElement.ReleasePointerCapture(e.Pointer);
+                        }
+                        break;
+                    case VirtualKeyModifiers.Shift:
+                        if (MoveCommandBar.EnableRotate.IsChecked.Value)
+                            Layer.Rotation += dblDelta_Scroll * 0.01;
+                        break;
+                }
+            }
+        }
+
         protected override void RequestAddLayerEvent(Layer.Layer Layer)
         {
             base.RequestAddLayerEvent(Layer);
@@ -129,9 +177,12 @@ namespace PhotoEditing
             }
             Element.ManipulationDelta += ManipulationDeltaEvent;
             Element.PointerEntered += PointerEntered;
+            Element.PointerWheelChanged += PoitnerWheel;
             Element.PointerExited += PointerExited;
             UpdateNumberFromValue();
         }
+
+
         protected override void RequestRemoveLayerEvent(Layer.Layer Layer)
         {
             base.RequestAddLayerEvent(Layer);
@@ -154,15 +205,13 @@ namespace PhotoEditing
         }
         public LambdaCommand(Action a)
         {
-            Action = (_) => a();
+            Action = _ => a();
         }
         public LambdaCommand()
         {
 
         }
-#pragma warning disable CS0067
         public event EventHandler CanExecuteChanged;
-#pragma warning restore CS0067
 
         public bool CanExecute(object parameter) => true;
 

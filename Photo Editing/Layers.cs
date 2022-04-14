@@ -17,6 +17,7 @@ using System.IO;
 using System.Numerics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Windows.UI.Xaml.Shapes;
 using JsonFormatting = Newtonsoft.Json.Formatting;
 
 namespace PhotoEditing.Layer
@@ -26,7 +27,9 @@ namespace PhotoEditing.Layer
         Background,
         Mat,
         Inking,
-        Text
+        Text,
+        RectangleShape,
+        EllipseShape
     }
     public interface ILayerTyping
     {
@@ -499,8 +502,11 @@ namespace PhotoEditing.Layer
         public override Types LayerType { get; } = Types.Text;
         public TextBlock TextBlock { get; private set; }
         string _Text;
-        public string Text { get => TextBlock.Text;
-            set {
+        public string Text
+        {
+            get => TextBlock.Text;
+            set
+            {
                 _Text = value;
                 if (TextBlock != null) TextBlock.Text = value;
             }
@@ -583,6 +589,193 @@ namespace PhotoEditing.Layer
                 if (f != null) Font = new FontFamily(f);
                 FontSize = json["FontSize"]?.ToObject<double>();
             });
+        }
+    }
+    public abstract class ShapeLayer : Layer
+    {
+        public abstract Brush BackgroundBrush { get; set; }
+        public bool Acrylic
+        {
+            get => BackgroundBrush is AcrylicBrush;
+            set
+            {
+                var IsAlreadyAcrylic = Acrylic;
+                if (IsAlreadyAcrylic != value)
+                {
+                    var Opacity = this.Opacity;
+                    var BackColor = this.Color;
+                    BackgroundBrush = value ? new AcrylicBrush() as Brush : new SolidColorBrush();
+                    this.Opacity = Opacity;
+                    this.Color = BackColor;
+                }
+            }
+        }
+        public double Opacity
+        {
+            get => BackgroundBrush.Opacity;
+            set => BackgroundBrush.Opacity = value;
+        }
+        public Color Color
+        {
+            get
+            {
+                if (BackgroundBrush is AcrylicBrush AcrylicBrush) return AcrylicBrush.TintColor;
+                else if (BackgroundBrush is SolidColorBrush SolidColorBrush) return SolidColorBrush.Color;
+                else return default;
+            }
+            set
+            {
+                if (BackgroundBrush is AcrylicBrush AcrylicBrush) AcrylicBrush.TintColor = value;
+                else if (BackgroundBrush is SolidColorBrush SolidColorBrush) SolidColorBrush.Color = value;
+            }
+        }
+        public double TintOpacity
+        {
+            get => (BackgroundBrush as AcrylicBrush)?.TintOpacity ?? 1;
+            set
+            {
+                if (BackgroundBrush is AcrylicBrush AcrylicBrush) AcrylicBrush.TintOpacity = value;
+            }
+        }
+
+        public ShapeLayer(JObject json)
+        {
+            LoadData(json);
+            OnCreate();
+
+        }
+        public ShapeLayer()
+        {
+            OnCreate();
+        }
+        public override void Dispose() { }
+        protected override JObject OnDataSaving()
+        {
+            bool Acrylic = false;
+            Color Color = default;
+            double Opacity = default, TintOpacity = default;
+            Extension.RunOnUIThread(() =>
+            {
+                var BackgroundBrush = this.BackgroundBrush;
+                Opacity = BackgroundBrush.Opacity;
+                if (BackgroundBrush is AcrylicBrush AcrylicBrush)
+                {
+                    Acrylic = true;
+                    Color = AcrylicBrush.TintColor;
+                    TintOpacity = AcrylicBrush.TintOpacity;
+                }
+                else if (BackgroundBrush is SolidColorBrush SolidColorBrush)
+                {
+                    Color = SolidColorBrush.Color;
+                }
+            });
+            return new JObject(
+                new JProperty(nameof(Acrylic), Acrylic),
+                new JProperty(nameof(Color), new byte[] { Color.A, Color.R, Color.G, Color.B }),
+                new JProperty(nameof(Opacity), Opacity),
+                new JProperty(nameof(TintOpacity), TintOpacity)
+            );
+        }
+
+        protected override void OnDataLoading(JObject json, Task _)
+        {
+            var Acrylic = json["Acrylic"]?.ToObject<bool>() ?? false;
+            var Opacity = json["Opacity"]?.ToObject<double>() ?? 1;
+            var TintOpacity = json["TintOpacity"]?.ToObject<double>() ?? 1;
+            var c = json["Color"]?.ToObject<byte[]>() ?? new byte[] { 0, 0, 0, 0 };
+            var Color = new Color { A = c[0], R = c[1], G = c[2], B = c[3] };
+            Extension.RunOnUIThread(() =>
+            {
+                if (Acrylic)
+                {
+                    BackgroundBrush = new AcrylicBrush
+                    {
+                        TintColor = Color,
+                        Opacity = Opacity,
+                        TintOpacity = TintOpacity
+                    };
+                }
+                else
+                {
+                    BackgroundBrush = new SolidColorBrush
+                    {
+                        Color = Color,
+                        Opacity = Opacity
+                    };
+                }
+            });
+        }
+    }
+    public class RectangleLayer : ShapeLayer
+    {
+        public override Types LayerType { get; } = Types.RectangleShape;
+        Rectangle Rectangle { get; set; }
+        Brush _BackgroundBrush;
+        public override Brush BackgroundBrush
+        {
+            get => Rectangle == null ? _BackgroundBrush : Rectangle.Fill;
+            set
+            {
+                if (Rectangle == null) _BackgroundBrush = value;
+                else Rectangle.Fill = value;
+            }
+        }
+        public RectangleLayer() : base() { }
+        public RectangleLayer(JObject json) : base(json) { }
+        protected override void OnCreate()
+        {
+            Extension.RunOnUIThread(() =>
+            {
+                var BackgroundBrush = _BackgroundBrush;
+                if (BackgroundBrush == null) BackgroundBrush = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+                Rectangle = new Rectangle()
+                {
+                    Fill = BackgroundBrush
+                };
+                LayerUIElement.Children.Add(Rectangle);
+            });
+        }
+    }
+    public class EllipseLayer : ShapeLayer
+    {
+        public override Types LayerType { get; } = Types.EllipseShape;
+        Ellipse Ellipse { get; set; }
+        Brush _BackgroundBrush;
+        public override Brush BackgroundBrush
+        {
+            get => Ellipse == null ? _BackgroundBrush : Ellipse.Fill;
+            set
+            {
+                if (Ellipse == null) _BackgroundBrush = value;
+                else Ellipse.Fill = value;
+            }
+        }
+        public EllipseLayer() : base() { }
+        public EllipseLayer(JObject json) : base(json) { }
+        protected override void OnCreate()
+        {
+            Extension.RunOnUIThread(() =>
+            {
+                var BackgroundBrush = _BackgroundBrush;
+                if (BackgroundBrush == null) BackgroundBrush = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+                Ellipse = new Ellipse()
+                {
+                    Fill = BackgroundBrush
+                };
+                LayerUIElement.Children.Add(Ellipse);
+            });
+        }
+    }
+    
+}
+namespace PhotoEditing
+{
+    public static partial class Extension
+    {
+        public static T SetName<T>(this T Layer, string Name) where T : Layer.Layer
+        {
+            Layer.LayerName.Value = Name;
+            return Layer;
         }
     }
 }

@@ -186,41 +186,5 @@ namespace PhotoEditing
 
             return finalSize;
         }
-        //static void PropertyChange(DependencyObject o, DependencyPropertyChangedEventArgs e)
-        //{
-        //    if (o is UIElement element)
-        //    {
-        //        if (element.RenderTransform is CompositeTransform T)
-        //        {
-        //            T.TranslateX = (double)T.GetValue(XProperty);
-        //            T.TranslateY = (double)T.GetValue(YProperty);
-        //        }
-        //    }
-        //    //var Parent = VisualTreeHelper.GetParent(o);
-        //    //if (Parent != null && Parent.GetType() == typeof(LayerContainer))
-        //    //{
-        //    //    var CP = (LayerContainer)Parent;
-        //    //    var Layer = (Grid)o;
-        //    //    Layer.Measure(new Size(CP.ActualWidth, CP.ActualHeight));
-        //    //    Layer.Arrange(new Rect(CP.GetXChild(Layer), CP.GetYChild(Layer), Layer.DesiredSize.Width, Layer.DesiredSize.Height));
-        //    //}
-
-        //}
-        //public static readonly DependencyProperty XProperty = DependencyProperty.Register("X", typeof(double), typeof(LayerContainer), new PropertyMetadata(0.0, PropertyChange));
-
-        //public double X
-        //{
-        //    get { return (double)GetValue(XProperty); }
-        //    set { SetValue(XProperty, value); }
-        //}
-        //public static readonly DependencyProperty YProperty = DependencyProperty.Register("Y", typeof(double), typeof(LayerContainer), new PropertyMetadata(0.0, PropertyChange));
-
-        //public double Y
-        //{
-        //    get { return (double)GetValue(YProperty); }
-        //    set { SetValue(YProperty, value); }
-        //}
-        //double GetXChild(UIElement child) => (double)child.GetValue(XProperty) + PaddingPixel;
-        //double GetYChild(UIElement child) => (double)child.GetValue(YProperty) + PaddingPixel;
     }
 }

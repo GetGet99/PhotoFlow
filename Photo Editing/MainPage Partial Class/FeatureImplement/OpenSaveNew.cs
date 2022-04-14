@@ -7,7 +7,7 @@ namespace PhotoEditing
 {
     partial class MainPage
     {
-        async void OpenFile(object sender, RoutedEventArgs e)
+        async void OpenFile(object _, RoutedEventArgs _1)
         {
             var (fileType, bytes) = await FileManagement.OpenFile();
             switch (fileType)
@@ -22,11 +22,11 @@ namespace PhotoEditing
                     break;
             }
         }
-        void SaveFile(object sender, RoutedEventArgs e)
+        void SaveFile(object _, RoutedEventArgs _1)
         {
             _ = FileManagement.SaveFile(LayerContainer, LayerContainerMasker, LayerContainerBackground);
         }
-        private async void InsertFile(object sender, RoutedEventArgs e)
+        private async void InsertFile(object _, RoutedEventArgs _1)
         {
             var mat = await FileManagement.OpenNewImageFile();
             var layer = new Layer.MatLayer(mat);
@@ -34,7 +34,7 @@ namespace PhotoEditing
             LayerContainer.AddNewLayer(layer);
         }
 
-        async void New(object sender, RoutedEventArgs e)
+        async void New(object _, RoutedEventArgs _1)
         {
             var dialog = new NewDialog();
             await dialog.ShowAsync();
@@ -42,17 +42,17 @@ namespace PhotoEditing
             var width = dialog.ImageWidth;
             var height = dialog.ImageHeight;
             var CanvasDimension = new OpenCvSharp.Size(width, height);
-            OpenCvSharp.Scalar Color;
+            Windows.UI.Color Color;
             switch (dialog.InitBackground)
             {
                 case "Transparent":
-                    Color = new OpenCvSharp.Scalar(0, 0, 0, 0);
+                    Color = Windows.UI.Color.FromArgb(0, 0, 0, 0);
                     break;
                 case "White":
-                    Color = new OpenCvSharp.Scalar(255, 255, 255, 255);
+                    Color = Windows.UI.Color.FromArgb(255, 255, 255, 255);
                     break;
                 case "Black":
-                    Color = new OpenCvSharp.Scalar(0, 0, 0, 255);
+                    Color = Windows.UI.Color.FromArgb(255, 0, 0, 0);
                     break;
                 default:
                     throw new Exception("impossible!");
@@ -60,11 +60,22 @@ namespace PhotoEditing
 
             NewImage(Color, CanvasDimension);
         }
-        void NewImage(OpenCvSharp.Scalar Color, OpenCvSharp.Size CanvasDimension)
+        void NewImage(Windows.UI.Color Color, OpenCvSharp.Size CanvasDimension)
         {
-            var a = new OpenCvSharp.Mat(CanvasDimension, OpenCvSharp.MatType.CV_8UC4);
-            a.SetTo(Color);
-            SetNewImage(a);
+            this.CanvasDimension = CanvasDimension;
+
+            Size Size = new Size(CanvasDimension.Width, CanvasDimension.Height);
+            LayerContainer.ImageSize = Size;
+
+            LayerContainer.Clear();
+            var layer = new Layer.RectangleLayer()
+            {
+                Color = Color,
+                Width = Size.Width,
+                Height = Size.Height
+            };
+            layer.LayerName.Value = "Background";
+            LayerContainer.AddNewLayer(layer);
         }
         void SetNewImage(OpenCvSharp.Mat Image)
         {
@@ -77,7 +88,6 @@ namespace PhotoEditing
             LayerContainer.ImageSize = Size;
 
             LayerContainer.Clear();
-            //LayerContainer.AddNewLayer(new Layer.BackgroundLayer(CanvasDimension));
             var layer = new Layer.MatLayer(Image);
             layer.LayerName.Value = "Background";
             LayerContainer.AddNewLayer(layer);

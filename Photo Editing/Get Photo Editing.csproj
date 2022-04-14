@@ -126,6 +126,9 @@
     <Compile Include="CommandButton\Controls\Inking.xaml.cs">
       <DependentUpon>Inking.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CommandButton\Controls\Shape.xaml.cs">
+      <DependentUpon>Shape.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CommandButton\Controls\Text.xaml.cs">
       <DependentUpon>Text.xaml</DependentUpon>
     </Compile>
@@ -133,6 +136,7 @@
       <DependentUpon>Move.xaml</DependentUpon>
     </Compile>
     <Compile Include="CommandButton\ImageCommandButton.cs" />
+    <Compile Include="CommandButton\ShapeCommandButton.cs" />
     <Compile Include="CommandButton\TextCommandButton.cs" />
     <Compile Include="CommandButton\MoveCommandButton.cs" />
     <Compile Include="Controls\CustomGrid.cs" />
@@ -207,6 +211,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="CommandButton\Controls\Inking.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="CommandButton\Controls\Shape.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

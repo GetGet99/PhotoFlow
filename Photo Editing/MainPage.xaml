@@ -212,8 +212,7 @@
             Orientation="Horizontal"
 			cg:CustomGrid.GridType="Auto"
         >
-            <TextBlock VerticalAlignment="Center" Text="Zoom:" Margin="0,0,3,0">
-            </TextBlock>
+            <TextBlock VerticalAlignment="Center" Text="Zoom:" Margin="10,0,3,0"/>
             <TextBlock x:Name="Zoom" VerticalAlignment="Center">
                 100
             </TextBlock>

@@ -11,12 +11,14 @@ namespace PhotoEditing
         protected Size CanvasPadding => new Size(LayerContainer.PaddingPixel, LayerContainer.PaddingPixel);
         protected readonly Border CommandBarPlace;
         protected Layer.Layer CurrentLayer { get; private set; }
+        protected float ZoomFactor => ScrollViewer.ZoomFactor;
         protected abstract CommandButtonCommandBar CommandBar { get; }
         public void SetLayerContainer(LayerContainer LayerContainer)
-        {
-            this.LayerContainer = LayerContainer;
-        }
+            => this.LayerContainer = LayerContainer;
+        public void SetScrollViewer(ScrollViewer ScrollViewer)
+            => this.ScrollViewer = ScrollViewer;
         protected LayerContainer LayerContainer { get; private set; }
+        protected ScrollViewer ScrollViewer { get; private set; }
         public CommandButtonBase(Symbol Icon, Border CommandBarPlace)
         {
             this.CommandBarPlace = CommandBarPlace;
@@ -53,8 +55,6 @@ namespace PhotoEditing
             if (CurrentLayer != null) RequestAddLayerEvent(Layer);
         }
         protected void AddNewLayer(Layer.Layer Layer)
-        {
-            LayerContainer.AddNewLayer(Layer);
-        }
+            => LayerContainer.AddNewLayer(Layer);
     }
 }

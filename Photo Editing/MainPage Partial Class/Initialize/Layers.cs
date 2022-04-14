@@ -65,7 +65,7 @@ namespace PhotoEditing
                 }
             };
 
-            NewImage(new OpenCvSharp.Scalar(0, 0, 0, 0), new OpenCvSharp.Size(800, 450));
+            NewImage(Color.FromArgb(0, 0, 0, 0), new OpenCvSharp.Size(800, 450));
         }
     }
 }
