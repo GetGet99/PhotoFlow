@@ -45,17 +45,17 @@
                                 <KeyboardAccelerator Key="N" Modifiers="Control"/>
                             </MenuFlyoutItem.KeyboardAccelerators>
                         </MenuFlyoutItem>
-                        <MenuFlyoutItem Text="New from Clipboard" Icon="Copy" Click="New">
-                            <!--<MenuFlyoutItem.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="N" Modifiers="Control,Shift"/>
-                            </MenuFlyoutItem.KeyboardAccelerators>-->
+                        <MenuFlyoutItem Text="New from Clipboard" Icon="Copy" Click="NewFromClipboard">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="V" Modifiers="Control,Shift"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
                         </MenuFlyoutItem>
                         <MenuFlyoutItem Text="Open" Icon="OpenFile" Click="OpenFile" AccessKey="O">
                             <MenuFlyoutItem.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="O" Modifiers="Control"/>
                             </MenuFlyoutItem.KeyboardAccelerators>
                         </MenuFlyoutItem>
-						<MenuFlyoutItem Text="Insert" Icon="OpenFile" Click="InsertFile" AccessKey="O">
+						<MenuFlyoutItem Text="Insert" Icon="OpenFile" Click="InsertFile" AccessKey="I">
 							<MenuFlyoutItem.KeyboardAccelerators>
 								<KeyboardAccelerator Key="O" Modifiers="Control,Shift"/>
 							</MenuFlyoutItem.KeyboardAccelerators>
@@ -79,19 +79,29 @@
                                 <KeyboardAccelerator Key="Z" Modifiers="Control,Shift"/>
                             </MenuFlyoutItem.KeyboardAccelerators>
                         </MenuFlyoutItem>
-                        <MenuFlyoutItem Text="Cut" Icon="Cut" IsEnabled="False">
+                        <MenuFlyoutItem Text="Delete" Icon="Delete" AccessKey="E" Click="Delete">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="Delete"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Cut" Icon="Cut" AccessKey="U" Click="Cut">
                             <MenuFlyoutItem.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="X" Modifiers="Control"/>
                             </MenuFlyoutItem.KeyboardAccelerators>
                         </MenuFlyoutItem>
-                        <MenuFlyoutItem Text="Copy" Icon="Copy" IsEnabled="False">
+                        <MenuFlyoutItem Text="Copy" Icon="Copy" AccessKey="C" Click="Copy">
                             <MenuFlyoutItem.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="C" Modifiers="Control"/>
                             </MenuFlyoutItem.KeyboardAccelerators>
                         </MenuFlyoutItem>
-                        <MenuFlyoutItem Text="Paste" Icon="Paste" IsEnabled="False">
+                        <MenuFlyoutItem Text="Paste" Icon="Paste" AccessKey="P" Click="Paste">
                             <MenuFlyoutItem.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="V" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Duplicate" Icon="Copy" AccessKey="D" Click="Duplicate">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="D" Modifiers="Control"/>
                             </MenuFlyoutItem.KeyboardAccelerators>
                         </MenuFlyoutItem>
                     </muxc:MenuBarItem>
@@ -187,19 +197,19 @@
 				<cg:RowGrid
                 x:Name="RightPanel"
                 >
-					<local:Pane
+					<!--<local:Pane
 						Grid.Row="0"
 						Title="Properties"
 						cg:CustomGrid.GridType="Star"
 						cg:CustomGrid.GridValue="1"
-                    ></local:Pane>
-					<local:Pane
+                    ></local:Pane>-->
+					<local:LayerPane
 						Grid.Row="1"
 						Title="Layers"
 						x:Name="LayerPanel"
 						cg:CustomGrid.GridType="Star"
 						cg:CustomGrid.GridValue="1"
-                    ></local:Pane>
+                    ></local:LayerPane>
 				</cg:RowGrid>
 			</Border>
         </cg:ColumnGrid>

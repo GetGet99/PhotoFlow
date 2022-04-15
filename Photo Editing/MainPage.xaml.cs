@@ -85,6 +85,8 @@ namespace PhotoEditing
             appWindowContentFrame.Navigate(GetType());
             //appWindowContentFrame
         }
+
+        
     }
     
 }

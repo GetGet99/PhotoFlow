@@ -145,29 +145,34 @@ namespace PhotoEditing
                 new JProperty("Layers", LayerJson)
                 );
         }
+        public static Layer.Layer LoadLayer(JObject JSON)
+        {
+            var layertype = JSON["LayerType"].ToObject<Layer.Types>();
+            switch (layertype)
+            {
+                case Layer.Types.Background:
+                    return new Layer.BackgroundLayer(JSON);
+                case Layer.Types.Inking:
+                    return new Layer.InkingLayer(JSON);
+                case Layer.Types.Mat:
+                    return new Layer.MatLayer(JSON);
+                case Layer.Types.Text:
+                    return new Layer.TextLayer(JSON);
+                case Layer.Types.RectangleShape:
+                    return new Layer.RectangleLayer(JSON);
+                case Layer.Types.EllipseShape:
+                    return new Layer.EllipseLayer(JSON);
+                default:
+                    throw new NotImplementedException();
+            }
+        }
         public async Task LoadAndReplace(JObject json)
         {
             Width = json["Width"].ToObject<double>();
             Height = json["Height"].ToObject<double>();
             Layers.Clear();
 
-            foreach (var Layer in await json["Layers"].ToObject<JObject[]>().ForEachParallel<JObject, Layer.Layer>(x =>
-             {
-                 var layertype = x["LayerType"].ToObject<Layer.Types>();
-                 switch (layertype)
-                 {
-                     case Layer.Types.Background:
-                         return new Layer.BackgroundLayer(x);
-                     case Layer.Types.Inking:
-                         return new Layer.InkingLayer(x);
-                     case Layer.Types.Mat:
-                         return new Layer.MatLayer(x);
-                     case Layer.Types.Text:
-                         return new Layer.TextLayer(x);
-                     default:
-                         throw new NotImplementedException();
-                 }
-             }))
+            foreach (var Layer in await json["Layers"].ToObject<JObject[]>().ForEachParallel(LoadLayer))
                 Layers.Add(Layer);
         }
         public void Clear()
@@ -180,7 +185,7 @@ namespace PhotoEditing
             foreach (UIElement UIELE in Children)
             {
                 var Layer = (Grid)UIELE;
-                Layer.Measure(new Size(ActualWidth,ActualHeight));
+                Layer.Measure(new Size(ActualWidth, ActualHeight));
                 Layer.Arrange(new Rect(0, 0, Layer.DesiredSize.Width, Layer.DesiredSize.Height));
             }
 

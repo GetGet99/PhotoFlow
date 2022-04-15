@@ -20,6 +20,7 @@ namespace PhotoEditing
     public sealed partial class NewDialog : ThemeContentDialog
     {
         public bool Success { get; private set; } = false;
+        public bool FromClipboard { get; private set; } = false;
         public ushort ImageWidth => Convert.ToUInt16(WidthTB.Text);
         public ushort ImageHeight => Convert.ToUInt16(HeightTB.Text);
         public string InitBackground => (InitBg.SelectedItem as RadioButton).Content.ToString();
@@ -32,7 +33,7 @@ namespace PhotoEditing
 
                 bool Ctrl = GetKeyDown(VirtualKey.Control);
                 bool Shift = GetKeyDown(VirtualKey.Shift);
-    
+
                 if (GetKeyDown(VirtualKey.Enter)) Create();
                 else if (GetKeyDown(VirtualKey.Escape)) Cancel();
             }
@@ -45,6 +46,7 @@ namespace PhotoEditing
         void Cancel(object o, RoutedEventArgs e) => Cancel();
         void Create()
         {
+            if (FromClipboard) goto End;
             if (HeightTB.Text == "" || WidthTB.Text == "")
             {
                 Button b = new Button { Content = "I understand!" };
@@ -56,16 +58,22 @@ namespace PhotoEditing
                     Content = a
                 };
                 b.Click += (o, e) => flyout.Hide();
-                
+
                 flyout.ShowAt(CreateButton);
-            } else
-            {
-                Success = true;
-                Hide();
+                return;
             }
+        End:
+            Success = true;
+            Hide();
         }
         void Create(object o, RoutedEventArgs e) => Create();
 
         private void NumberOnlyFilter(TextBox sender, TextBoxBeforeTextChangingEventArgs args) => args.Cancel = args.NewText.Any(c => !char.IsDigit(c));
+
+        private void CreateFromClipboardImage(object sender, RoutedEventArgs e)
+        {
+            FromClipboard = true;
+            Create();
+        }
     }
 }

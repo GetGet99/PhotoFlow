@@ -8,7 +8,6 @@
     mc:Ignorable="d"
     CornerRadius="8"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -37,7 +36,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Button Margin="0,15,0,15" Grid.Column="0" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="From Clipboard Image" TabIndex="5">
+            <Button Margin="0,15,0,15" Grid.Column="0" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Content="From Clipboard Image" Click="CreateFromClipboardImage" TabIndex="5">
             </Button>
             <TextBox x:Name="WidthTB" Grid.Row="1" Grid.Column="0" KeyboardAcceleratorPlacementMode="Auto" PlaceholderText="Width (pixel)" TabIndex="0" TextAlignment="Center" BeforeTextChanging="NumberOnlyFilter"/>
             <TextBlock Margin="7.5, 0, 7.5, 0" Grid.Row="1" Grid.Column="1" KeyboardAcceleratorPlacementMode="Auto" TextAlignment="Center" VerticalAlignment="Center" HorizontalAlignment="Center">By</TextBlock>

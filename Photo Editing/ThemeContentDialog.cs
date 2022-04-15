@@ -13,6 +13,7 @@ namespace PhotoEditing
         public ThemeContentDialog()
         {
             Background = Constants.DefaultAcrylicBackground;
+            CornerRadius = new Windows.UI.Xaml.CornerRadius(8);
         }
     }
     public static partial class Constants

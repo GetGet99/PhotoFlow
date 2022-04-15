@@ -140,6 +140,9 @@
     <Compile Include="CommandButton\TextCommandButton.cs" />
     <Compile Include="CommandButton\MoveCommandButton.cs" />
     <Compile Include="Controls\CustomGrid.cs" />
+    <Compile Include="Controls\LayerPane.xaml.cs">
+      <DependentUpon>LayerPane.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\RenameDialog.xaml.cs">
       <DependentUpon>RenameDialog.xaml</DependentUpon>
     </Compile>
@@ -233,6 +236,10 @@
     <Page Include="Controls\LayerPreview.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\LayerPane.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Controls\RenameDialog.xaml">
       <SubType>Designer</SubType>

@@ -96,8 +96,7 @@ namespace PhotoEditing.Layer
             set => LayerUIElement.Height = value;
         }
 
-
-        public JObject SaveData()
+        public JObject SaveData(bool OnMainThread = false)
         {
             var save = OnDataSaving();
             double X = 0, Y = 0,
@@ -105,7 +104,7 @@ namespace PhotoEditing.Layer
                 Rotation = 0,
                 ScaleX = 0, ScaleY = 0,
                 CenterX = 0, CenterY = 0;
-            LayerUIElement.Dispatcher.RunAsync(CoreDispatcherPriority.High, () =>
+            void GetData()
             {
                 X = this.X;
                 Y = this.Y;
@@ -116,7 +115,9 @@ namespace PhotoEditing.Layer
                 ScaleY = this.ScaleY;
                 CenterX = this.CenterX;
                 CenterY = this.CenterY;
-            }).AsTask().Wait();
+            }
+            if (OnMainThread) GetData();
+            else LayerUIElement.Dispatcher.RunAsync(CoreDispatcherPriority.High, GetData).AsTask().Wait();
             return new JObject(
                 new JProperty("LayerName", LayerName.Value),
                 new JProperty("LayerType", LayerType),
@@ -776,6 +777,10 @@ namespace PhotoEditing
         {
             Layer.LayerName.Value = Name;
             return Layer;
+        }
+        public static T DeepClone<T>(this T Layer, bool OnMainThread) where T : Layer.Layer
+        {
+            return (T)LayerContainer.LoadLayer(Layer.SaveData(OnMainThread: OnMainThread));
         }
     }
 }

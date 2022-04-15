@@ -9,7 +9,7 @@ namespace PhotoEditing
 {
     public interface ISaveable
     {
-        JObject SaveData();
+        JObject SaveData(bool onMainThread = false);
         void LoadData(JObject bytes);
     }
 }

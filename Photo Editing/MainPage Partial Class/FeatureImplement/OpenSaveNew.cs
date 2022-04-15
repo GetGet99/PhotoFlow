@@ -3,6 +3,8 @@ using System.Text;
 using Windows.UI.Xaml;
 using Windows.Foundation;
 using Newtonsoft.Json.Linq;
+using Windows.ApplicationModel.DataTransfer;
+
 namespace PhotoEditing
 {
     partial class MainPage
@@ -34,40 +36,56 @@ namespace PhotoEditing
             LayerContainer.AddNewLayer(layer);
         }
 
-        async void New(object _, RoutedEventArgs _1)
+        async void NewFromClipboard(object sender, RoutedEventArgs e)
+        {
+            var layer = await Clipboard.GetContent().ReadAsLayerAsync();
+            if (layer != null) NewImage(layer);
+            else
+            {
+                await new ThemeContentDialog
+                {
+                    Title = "Error",
+                    Content = "There is no compatable Clipboard Item!",
+                    PrimaryButtonText = "Okay"
+                }.ShowAsync();
+            }
+        }
+        async void New(object sender, RoutedEventArgs e)
         {
             var dialog = new NewDialog();
             await dialog.ShowAsync();
             if (!dialog.Success) return;
-            var width = dialog.ImageWidth;
-            var height = dialog.ImageHeight;
-            var CanvasDimension = new OpenCvSharp.Size(width, height);
-            Windows.UI.Color Color;
-            switch (dialog.InitBackground)
+            if (dialog.FromClipboard)
             {
-                case "Transparent":
-                    Color = Windows.UI.Color.FromArgb(0, 0, 0, 0);
-                    break;
-                case "White":
-                    Color = Windows.UI.Color.FromArgb(255, 255, 255, 255);
-                    break;
-                case "Black":
-                    Color = Windows.UI.Color.FromArgb(255, 0, 0, 0);
-                    break;
-                default:
-                    throw new Exception("impossible!");
+                NewFromClipboard(sender, e);
             }
+            else
+            {
+                var width = dialog.ImageWidth;
+                var height = dialog.ImageHeight;
+                var CanvasDimension = new OpenCvSharp.Size(width, height);
+                Windows.UI.Color Color;
+                switch (dialog.InitBackground)
+                {
+                    case "Transparent":
+                        Color = Windows.UI.Color.FromArgb(0, 0, 0, 0);
+                        break;
+                    case "White":
+                        Color = Windows.UI.Color.FromArgb(255, 255, 255, 255);
+                        break;
+                    case "Black":
+                        Color = Windows.UI.Color.FromArgb(255, 0, 0, 0);
+                        break;
+                    default:
+                        throw new Exception("impossible!");
+                }
 
-            NewImage(Color, CanvasDimension);
+                NewImage(Color, CanvasDimension);
+            }
         }
         void NewImage(Windows.UI.Color Color, OpenCvSharp.Size CanvasDimension)
         {
-            this.CanvasDimension = CanvasDimension;
-
             Size Size = new Size(CanvasDimension.Width, CanvasDimension.Height);
-            LayerContainer.ImageSize = Size;
-
-            LayerContainer.Clear();
             var layer = new Layer.RectangleLayer()
             {
                 Color = Color,
@@ -75,7 +93,18 @@ namespace PhotoEditing
                 Height = Size.Height
             };
             layer.LayerName.Value = "Background";
-            LayerContainer.AddNewLayer(layer);
+            NewImage(layer);
+        }
+        void NewImage(Layer.Layer Layer)
+        {
+            CanvasDimension = new OpenCvSharp.Size(Layer.Width, Layer.Height);
+
+            Size Size = new Size(CanvasDimension.Width, CanvasDimension.Height);
+            LayerContainer.ImageSize = Size;
+
+            LayerContainer.Clear();
+            Layer.LayerName.Value = "Background";
+            LayerContainer.AddNewLayer(Layer);
         }
         void SetNewImage(OpenCvSharp.Mat Image)
         {
@@ -83,7 +112,7 @@ namespace PhotoEditing
 
             var CvSize = new OpenCvSharp.Size(Image.Width, Image.Height);
             CanvasDimension = CvSize;
-            
+
             Size Size = new Size(CanvasDimension.Width, CanvasDimension.Height);
             LayerContainer.ImageSize = Size;
 

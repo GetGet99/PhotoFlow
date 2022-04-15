@@ -105,7 +105,7 @@ namespace PhotoEditing
         public static async Task RunOnUIThreadAsync(Action a)
         {
             if (Dispatcher.HasThreadAccess) a();
-            await Dispatcher.TryRunAsync(CoreDispatcherPriority.High, new DispatchedHandler(a));
+            else await Dispatcher.TryRunAsync(CoreDispatcherPriority.High, new DispatchedHandler(a));
         }
         public static T Cast<T>(this object o) where T : class
         {

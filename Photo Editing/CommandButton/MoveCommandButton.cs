@@ -194,6 +194,7 @@ namespace PhotoEditing
             Element.ManipulationDelta -= ManipulationDeltaEvent;
             Element.PointerEntered -= PointerEntered;
             Element.PointerExited -= PointerExited;
+            PointerExited(null, null);
         }
     }
     class LambdaCommand : System.Windows.Input.ICommand
