@@ -12,7 +12,7 @@ using Windows.ApplicationModel.DataTransfer;
 using Newtonsoft.Json.Linq;
 using System.IO;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     partial class Constants
     {
@@ -80,32 +80,19 @@ namespace PhotoEditing
 
             NewImage(Color.FromArgb(0, 0, 0, 0), new OpenCvSharp.Size(800, 450));
         }
-
+        
         private void Cut(object sender, RoutedEventArgs e)
         {
             var selection = LayerContainer.Selection;
             if (selection == null) return;
-            var data = new DataPackage
-            {
-                RequestedOperation = DataPackageOperation.Move
-            };
-            var dataasstring = selection.SaveData(OnMainThread: true).ToString();
-            data.SetData("GPE", dataasstring);
-            data.SetText(dataasstring);
-            selection.DeleteSelf();
-            Clipboard.SetContent(data);
+            selection.CutNoWait();
         }
 
         private void Copy(object sender, RoutedEventArgs e)
         {
-            var data = new DataPackage
-            {
-                RequestedOperation = DataPackageOperation.Copy
-            };
             var selection = LayerContainer.Selection;
             if (selection == null) return;
-            data.SetData("GPE", selection.SaveData(OnMainThread: true).ToString());
-            Clipboard.SetContent(data);
+            selection.CopyNoWait();
         }
 
         private async void Paste(object sender, RoutedEventArgs e)
@@ -122,11 +109,13 @@ namespace PhotoEditing
         {
             var selection = LayerContainer.Selection;
             if (selection == null) return;
-            LayerContainer.AddNewLayer(selection.DeepClone(OnMainThread: true));
+            LayerContainer.AddNewLayer(selection.DeepClone());
         }
     }
     partial class Extension
     {
+        
+        
         public static async Task<T> GetAsAsync<T>(this DataPackageView dataObject, string format) => (T)(await dataObject.GetDataAsync(format));
         public static Task<MemoryStream> GetStreamAsync(this DataPackageView dataObject, string format) => dataObject.GetAsAsync<MemoryStream>(format);
         public static Task<string> GetStringAsync(this DataPackageView dataObject, string format) => dataObject.GetAsAsync<string>(format);

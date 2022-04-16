@@ -5,7 +5,7 @@ using Windows.Foundation;
 using Newtonsoft.Json.Linq;
 using Windows.ApplicationModel.DataTransfer;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     partial class MainPage
     {

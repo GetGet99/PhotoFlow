@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     public partial class Constants
     {

@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 
-namespace PhotoEditing.Features
+namespace PhotoFlow.Features
 {
     public abstract class FeatureBase<TInputType,TOutputType>
     {

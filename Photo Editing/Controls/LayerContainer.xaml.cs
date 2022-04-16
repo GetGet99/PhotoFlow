@@ -19,7 +19,7 @@ using Windows.UI.Xaml.Navigation;
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     public sealed partial class LayerContainer : Panel
     {
@@ -150,8 +150,8 @@ namespace PhotoEditing
             var layertype = JSON["LayerType"].ToObject<Layer.Types>();
             switch (layertype)
             {
-                case Layer.Types.Background:
-                    return new Layer.BackgroundLayer(JSON);
+                case Layer.Types.Background: // Deprecated Layer
+                    return null;
                 case Layer.Types.Inking:
                     return new Layer.InkingLayer(JSON);
                 case Layer.Types.Mat:
@@ -173,7 +173,7 @@ namespace PhotoEditing
             Layers.Clear();
 
             foreach (var Layer in await json["Layers"].ToObject<JObject[]>().ForEachParallel(LoadLayer))
-                Layers.Add(Layer);
+                if (Layer != null) Layers.Add(Layer);
         }
         public void Clear()
         {

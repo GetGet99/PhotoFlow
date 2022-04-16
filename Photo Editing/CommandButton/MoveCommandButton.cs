@@ -8,11 +8,11 @@ using Windows.UI.Xaml.Input;
 using Windows.Devices.Input;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
-using PhotoEditing.CommandButton.Controls;
+using PhotoFlow.CommandButton.Controls;
 using Microsoft.UI.Xaml.Controls;
 using Windows.System;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     public class MoveCommandButton : CommandButtonBase
     {
@@ -196,6 +196,15 @@ namespace PhotoEditing
             Element.PointerExited -= PointerExited;
             PointerExited(null, null);
         }
+
+        //class Move : CommandButtonCommandBar
+        //{
+        //    protected override IEnumerable<UIElement> OnLoadUI()
+        //    {
+        //        base.OnLoadUI();
+        //        yield return 
+        //    }
+        //}
     }
     class LambdaCommand : System.Windows.Input.ICommand
     {
@@ -210,10 +219,10 @@ namespace PhotoEditing
         }
         public LambdaCommand()
         {
-
         }
+#pragma warning disable
         public event EventHandler CanExecuteChanged;
-
+#pragma warning restore
         public bool CanExecute(object parameter) => true;
 
         public void Execute(object parameter)

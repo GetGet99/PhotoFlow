@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Windows.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls;
 using OpenCvSharp;
 using Windows.UI.Core;
@@ -14,13 +9,11 @@ using Windows.UI;
 using Windows.Storage.Streams;
 using Windows.UI.Input.Inking;
 using System.IO;
-using System.Numerics;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Windows.UI.Xaml.Shapes;
-using JsonFormatting = Newtonsoft.Json.Formatting;
+using Windows.ApplicationModel.DataTransfer;
 
-namespace PhotoEditing.Layer
+namespace PhotoFlow.Layer
 {
     public enum Types
     {
@@ -87,16 +80,28 @@ namespace PhotoEditing.Layer
         }
         public double Width
         {
-            get => LayerUIElement.Width;
-            set => LayerUIElement.Width = value;
+            get => LayerUIElement.Width;//(LayerUIElement.Children[0] as FrameworkElement).Width;
+            set
+            {
+                LayerUIElement.Width = value;
+                //foreach (var child in LayerUIElement.Children)
+                //    if (child is FrameworkElement element)
+                //        element.Width = value;
+            }
         }
         public double Height
         {
-            get => LayerUIElement.Height;
-            set => LayerUIElement.Height = value;
+            get => LayerUIElement.Height;//(LayerUIElement.Children[0] as FrameworkElement).Height;
+            set
+            {
+                LayerUIElement.Height = value;
+                //foreach (var child in LayerUIElement.Children)
+                //    if (child is FrameworkElement element)
+                //        element.Height = value;
+            }
         }
 
-        public JObject SaveData(bool OnMainThread = false)
+        public JObject SaveData()
         {
             var save = OnDataSaving();
             double X = 0, Y = 0,
@@ -104,7 +109,7 @@ namespace PhotoEditing.Layer
                 Rotation = 0,
                 ScaleX = 0, ScaleY = 0,
                 CenterX = 0, CenterY = 0;
-            void GetData()
+            Extension.RunOnUIThread(delegate
             {
                 X = this.X;
                 Y = this.Y;
@@ -115,9 +120,7 @@ namespace PhotoEditing.Layer
                 ScaleY = this.ScaleY;
                 CenterX = this.CenterX;
                 CenterY = this.CenterY;
-            }
-            if (OnMainThread) GetData();
-            else LayerUIElement.Dispatcher.RunAsync(CoreDispatcherPriority.High, GetData).AsTask().Wait();
+            });
             return new JObject(
                 new JProperty("LayerName", LayerName.Value),
                 new JProperty("LayerType", LayerType),
@@ -267,7 +270,40 @@ namespace PhotoEditing.Layer
             }
         }
         public void DeleteSelf() => RemoveSelf();
+        public void Duplicate() => LayerContainer?.AddNewLayer(this.DeepClone());
+        async Task CopyAsync(DataPackageOperation Operation)
+        {
+            var data = new DataPackage
+            {
+                RequestedOperation = Operation
+            };
+            data.SetData("GPE", SaveData().ToString());
+            DisablePreviewEffects();
+            var mat = await LayerUIElement.ToMatAsync();
+            EnablePreviewEffects();
+            Cv2.ImEncode(".png", mat, out var bytes);
+            var ms = new MemoryStream(bytes);
+            var memref = RandomAccessStreamReference.CreateFromStream(ms.AsRandomAccessStream());
+            data.SetData("PNG", ms.AsRandomAccessStream());
+            data.SetBitmap(memref);
+            GC.KeepAlive(ms);
 
+            Clipboard.SetContent(data);
+
+            void HistoryChanged(object _, ClipboardHistoryChangedEventArgs e)
+            {
+                ms.Dispose();
+            }
+            Clipboard.HistoryChanged += HistoryChanged;
+        }
+        public Task CopyAsync() => CopyAsync(DataPackageOperation.Copy);
+        public async void CopyNoWait() => await CopyAsync();
+        public async Task CutAsync()
+        {
+            await CopyAsync(DataPackageOperation.Move);
+            DeleteSelf();
+        }
+        public async void CutNoWait() => await CutAsync();
         public async void ConvertToMatLayerAsync()
         {
             ReplaceSelf(await ConvertToMatLayerAsync(this));
@@ -324,15 +360,12 @@ namespace PhotoEditing.Layer
             var height = m.Height;
             Extension.RunOnUIThread(() =>
             {
-                Width = width;
-                Height = height;
-                Image = new Image
-                {
-                    Width = width,
-                    Height = height
-                };
+                
+                Image = new Image();
                 UpdateImage();
                 LayerUIElement.Children.Add(Image);
+                Width = width;
+                Height = height;
             });
             CompleteCreate();
         }
@@ -365,45 +398,6 @@ namespace PhotoEditing.Layer
             UpdateImage();
         }
     }
-    public class BackgroundLayer : Layer
-    {
-        public override Types LayerType { get; } = Types.Background;
-        static readonly Brush LayeringBrush = (Brush)Application.Current.Resources["LayerFillColorDefaultBrush"];
-        public BackgroundLayer(Size s)
-        {
-            Width = s.Width;
-            Height = s.Height;
-            OnCreate();
-            CompleteCreate();
-        }
-        public BackgroundLayer(JObject json)
-        {
-            LoadData(json);
-            OnCreate();
-            CompleteCreate();
-        }
-        protected override void OnCreate() => Extension.RunOnUIThread(() =>
-        {
-            LayerName.Value = "Background Effect";
-            LayerUIElement.Background = LayeringBrush;
-            LayerPreview.Visibility = Visibility.Collapsed;
-        });
-        public override void DisablePreviewEffects()
-        {
-            base.DisablePreviewEffects();
-            Extension.RunOnUIThread(() => LayerUIElement.Background = null);
-        }
-        public override void EnablePreviewEffects()
-        {
-            base.EnablePreviewEffects();
-            Extension.RunOnUIThread(() => LayerUIElement.Background = LayeringBrush);
-        }
-        protected override JObject OnDataSaving() => new JObject();
-
-        protected override void OnDataLoading(JObject JObject, Task _) { }
-
-        public override void Dispose() { }
-    }
     public class InkingLayer : Layer
     {
 
@@ -413,12 +407,12 @@ namespace PhotoEditing.Layer
         public InkCanvas InkCanvas { get; private set; }
         public InkingLayer(Rect Where)
         {
+            OnCreate();
+            CompleteCreate();
             X = Where.X;
             Y = Where.Y;
             Width = Where.Width;
             Height = Where.Height;
-            OnCreate();
-            CompleteCreate();
         }
         public InkingLayer(JObject json)
         {
@@ -476,9 +470,9 @@ namespace PhotoEditing.Layer
             async Task<JObject> func()
             {
                 var ms = new InMemoryRandomAccessStream();
-                LayerUIElement.Dispatcher.RunAsync(CoreDispatcherPriority.High, async () =>
+                await Extension.RunOnUIThreadAsync(async () =>
                     await InkCanvas.InkPresenter.StrokeContainer.SaveAsync(ms, InkPersistenceFormat.Isf)
-                ).AsTask().Wait();
+                );
 
                 byte[] bytes = new byte[ms.Size];
                 var readstream = ms.AsStreamForRead();
@@ -541,10 +535,10 @@ namespace PhotoEditing.Layer
         }
         public TextLayer(Windows.Foundation.Point Where, string Text)
         {
-            X = Where.X;
-            Y = Where.Y;
             this.Text = Text;
             OnCreate();
+            X = Where.X;
+            Y = Where.Y;
         }
         protected override void OnCreate()
         {
@@ -767,9 +761,9 @@ namespace PhotoEditing.Layer
             });
         }
     }
-    
+
 }
-namespace PhotoEditing
+namespace PhotoFlow
 {
     public static partial class Extension
     {
@@ -778,9 +772,9 @@ namespace PhotoEditing
             Layer.LayerName.Value = Name;
             return Layer;
         }
-        public static T DeepClone<T>(this T Layer, bool OnMainThread) where T : Layer.Layer
+        public static T DeepClone<T>(this T Layer) where T : Layer.Layer
         {
-            return (T)LayerContainer.LoadLayer(Layer.SaveData(OnMainThread: OnMainThread));
+            return (T)LayerContainer.LoadLayer(Layer.SaveData());
         }
     }
 }

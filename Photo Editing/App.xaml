@@ -1,14 +1,17 @@
 ﻿<Application
-    x:Class="PhotoEditing.App"
+    x:Class="PhotoFlow.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:PhotoEditing"
+    xmlns:local="using:PhotoFlow"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls">
     <Application.Resources>
         <controls:XamlControlsResources>
             <controls:XamlControlsResources.MergedDictionaries>
                 <ResourceDictionary>
                     <AcrylicBrush x:Name="DefaultAcrylicBackground" Opacity="1" TintOpacity="0.5" TintColor="{ThemeResource SystemColorBackgroundColor}"/>
+                    <Thickness x:Key="NavigationViewContentMargin">0,48,0,0</Thickness>
+                    <Thickness x:Key="NavigationViewContentGridBorderThickness">0</Thickness>
+                    <SolidColorBrush x:Key="NavigationViewContentBackground" Color="Transparent"></SolidColorBrush>
                 </ResourceDictionary>
             </controls:XamlControlsResources.MergedDictionaries>
         </controls:XamlControlsResources>

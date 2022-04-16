@@ -1,8 +1,8 @@
 ﻿<Grid
-    x:Class="PhotoEditing.LayerPreview"
+    x:Class="PhotoFlow.LayerPreview"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:PhotoEditing"
+    xmlns:local="using:PhotoFlow"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
@@ -31,13 +31,17 @@
             </ResourceDictionary>
         </Button.Resources>
         <Button.ContextFlyout>
-            <CommandBarFlyout x:Name="RightClickCommand">
-                <AppBarButton Label="Rename" Icon="Rename" Click="Rename" AccessKey="R"/>
-                <AppBarButton Label="Duplicate" Icon="Copy" Click="Rename" IsEnabled="False" AccessKey="D"/>
+            <CommandBarFlyout x:Name="RightClickCommand" Placement="BottomEdgeAlignedLeft">
+                <AppBarButton Label="Cut" Icon="Cut" Click="Cut" AccessKey="C"/>
+                <AppBarButton Label="Copy" Icon="Copy" Click="Copy" AccessKey="C"/>
                 <AppBarButton Label="Delete" Icon="Delete" Click="Delete" AccessKey="Delete"/>
-                <AppBarButton Label="Convert To Image" Icon="SetLockScreen" Click="ToMatLayer" AccessKey="C"/>
-                <AppBarButton Label="Save as Image" Icon="Save" Click="SaveLayerAsImage" AccessKey="S"/>
 				<AppBarButton Label="Properties" Icon="Important" Click="Properties" AccessKey="P"/>
+                <CommandBarFlyout.SecondaryCommands>
+                    <AppBarButton Label="Duplicate" Icon="Copy" Click="Duplicate" AccessKey="D"/>
+                    <AppBarButton Label="Rename" Icon="Rename" Click="Rename" AccessKey="R"/>
+                    <AppBarButton Label="Convert To Image" Icon="SetLockScreen" Click="ToMatLayer" AccessKey="I"/>
+                    <AppBarButton Label="Save as Image" Icon="Save" Click="SaveLayerAsImage" AccessKey="S"/>
+                </CommandBarFlyout.SecondaryCommands>
             </CommandBarFlyout>
         </Button.ContextFlyout>
     </Button>

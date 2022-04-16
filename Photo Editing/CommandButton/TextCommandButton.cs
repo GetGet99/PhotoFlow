@@ -8,9 +8,9 @@ using Windows.UI.Xaml.Input;
 using Windows.Devices.Input;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
-using PhotoEditing.CommandButton.Controls;
+using PhotoFlow.CommandButton.Controls;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     public class TextCommandButton : CommandButtonBase
     {
@@ -53,7 +53,7 @@ namespace PhotoEditing
             base.LayerChanged(Layer);
             if (Layer == null) return;
             TextCommandBar.LayerEditorControls.Visibility =
-                Layer.LayerType == PhotoEditing.Layer.Types.Text ? Visibility.Visible : Visibility.Collapsed;
+                Layer.LayerType == PhotoFlow.Layer.Types.Text ? Visibility.Visible : Visibility.Collapsed;
             if (Layer is Layer.TextLayer TextLayer)
             {
                 TextCommandBar.TextBox.Text = TextLayer.Text;

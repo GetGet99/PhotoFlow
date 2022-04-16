@@ -1,20 +1,13 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
+using Windows.UI;
+using Windows.UI.Core.Preview;
+using Windows.UI.WindowManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Media.Imaging;
-using Windows.Graphics.Imaging;
-using System.Threading.Tasks;
-using Windows.Graphics.Display;
-using Windows.Storage.Streams;
 using Windows.UI.Xaml.Hosting;
-using Windows.UI.WindowManagement;
-using Windows.UI;
-// The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     public sealed partial class MainPage : Page
     {
@@ -26,7 +19,7 @@ namespace PhotoEditing
             InitializeCommandButtons();
             ImplementZoomFunctionality();
             ImplementingLayersThing();
-            Windows.UI.Core.Preview.SystemNavigationManagerPreview.GetForCurrentView().CloseRequested += async (o, e) =>
+            SystemNavigationManagerPreview.GetForCurrentView().CloseRequested += async (o, e) =>
             {
                 var deferral = e.GetDeferral();
                 var dialog = new ThemeContentDialog
@@ -48,7 +41,7 @@ namespace PhotoEditing
         
         
 
-        private void Invert(object sender, RoutedEventArgs e)
+        private void Invert(object _, RoutedEventArgs _1)
         {
             var layer = LayerContainer.Selection;
             if (layer.LayerType == Layer.Types.Mat)
@@ -59,12 +52,12 @@ namespace PhotoEditing
             }
         }
 
-        private async void ReloadWindow(object sender, RoutedEventArgs e)
+        private async void ReloadWindow(object _, RoutedEventArgs _1)
         {
             await Task.Delay(100);
             Frame.Navigate(GetType());
         }
-        private async void NewWindow(object sender, RoutedEventArgs e)
+        private async void NewWindow(object _, RoutedEventArgs _1)
         {
             await Task.Delay(100);
             //Frame.Navigate(GetType());

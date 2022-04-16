@@ -1,8 +1,7 @@
 ﻿using OpenCvSharp;
 using Windows.UI.Xaml.Controls;
-using Windows.Foundation.Collections;
-using PhotoEditing.CommandButton.Controls;
-namespace PhotoEditing
+using PhotoFlow.CommandButton.Controls;
+namespace PhotoFlow
 {
     public abstract class CommandButtonBase
     {

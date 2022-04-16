@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Windows.UI.Core;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     public partial class Extension
     {
@@ -82,7 +82,7 @@ namespace PhotoEditing
                     try
                     {
                         arr[i] = func(item);
-                    } catch (Exception e)
+                    } catch
                     {
                         System.Diagnostics.Debugger.Break();
                     }

@@ -7,12 +7,12 @@
     <ProjectGuid>{AEFACE6F-145C-4C3C-BD27-90CC3EE59AA7}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PhotoEditing</RootNamespace>
-    <AssemblyName>Photo Editing</AssemblyName>
+    <RootNamespace>PhotoFlow</RootNamespace>
+    <AssemblyName>PhotoFlow</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.22000.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -126,19 +126,20 @@
     <Compile Include="CommandButton\Controls\Inking.xaml.cs">
       <DependentUpon>Inking.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CommandButton\Controls\Move.xaml.cs">
+      <DependentUpon>Move.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CommandButton\Controls\Shape.xaml.cs">
       <DependentUpon>Shape.xaml</DependentUpon>
     </Compile>
     <Compile Include="CommandButton\Controls\Text.xaml.cs">
       <DependentUpon>Text.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CommandButton\Controls\Move.xaml.cs">
-      <DependentUpon>Move.xaml</DependentUpon>
-    </Compile>
     <Compile Include="CommandButton\ImageCommandButton.cs" />
     <Compile Include="CommandButton\ShapeCommandButton.cs" />
     <Compile Include="CommandButton\TextCommandButton.cs" />
     <Compile Include="CommandButton\MoveCommandButton.cs" />
+    <Compile Include="Controls\CSUI.cs" />
     <Compile Include="Controls\CustomGrid.cs" />
     <Compile Include="Controls\LayerPane.xaml.cs">
       <DependentUpon>LayerPane.xaml</DependentUpon>
@@ -210,22 +211,22 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Page Include="CommandButton\Controls\Image.xaml">
-      <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CommandButton\Controls\Inking.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="CommandButton\Controls\Move.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CommandButton\Controls\Shape.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="CommandButton\Controls\Text.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="CommandButton\Controls\Move.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -264,19 +265,19 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
-      <Version>6.2.12</Version>
+      <Version>6.2.13</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Toolkit.Uwp.UI">
-      <Version>7.1.1</Version>
+      <Version>7.1.2</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.UI.Xaml">
-      <Version>2.7.0</Version>
+      <Version>2.8.0-prerelease.220413001</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
     </PackageReference>
     <PackageReference Include="OpenCvSharp4.Windows">
-      <Version>4.5.3.20210817</Version>
+      <Version>4.5.5.20211231</Version>
     </PackageReference>
     <PackageReference Include="Win2D.uwp">
       <Version>1.26.0</Version>

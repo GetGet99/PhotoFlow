@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using OpenCvSharp;
-namespace PhotoEditing
+namespace PhotoFlow
 {
     public static class MatExtension
     {

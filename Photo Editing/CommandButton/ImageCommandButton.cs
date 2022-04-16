@@ -2,10 +2,10 @@
 using OpenCvSharp;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml;
-using PhotoEditing.CommandButton.Controls;
-using ImageBar = PhotoEditing.CommandButton.Controls.Image;
+using PhotoFlow.CommandButton.Controls;
+using ImageBar = PhotoFlow.CommandButton.Controls.Image;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     public class ImageCommandButton : CommandButtonBase
     {

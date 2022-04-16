@@ -8,7 +8,7 @@ using Windows.UI;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     partial class MainPage
     {

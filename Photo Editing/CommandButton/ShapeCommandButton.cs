@@ -9,9 +9,9 @@ using Windows.Devices.Input;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI;
-using PhotoEditing.CommandButton.Controls;
+using PhotoFlow.CommandButton.Controls;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     public class ShapeCommandButton : CommandButtonBase
     {

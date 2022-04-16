@@ -2,7 +2,7 @@
 using System;
 using OpenCvSharp;
 using CvMat = OpenCvSharp.Mat;
-namespace PhotoEditing.Features.Mat
+namespace PhotoFlow.Features.Mat
 {
     public class Crop : MatBasedFeature<CvMat>
     {

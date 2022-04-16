@@ -4,16 +4,28 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.UI.Xaml.Controls;
+using CSUI;
+using Windows.UI.Xaml;
 
-namespace PhotoEditing.CommandButton.Controls
+namespace PhotoFlow.CommandButton.Controls
 {
-    public class CommandButtonCommandBar : StackPanel
+    public abstract class CommandButtonCommandBar : StackPanel
     {
         public CommandButtonCommandBar()
         {
-            HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Left;
+            HorizontalAlignment = HorizontalAlignment.Left;
             Orientation = Orientation.Horizontal;
-            Padding = new Windows.UI.Xaml.Thickness(10);
+            Padding = new Thickness(10);
+            Height = 60;
+            //this.RegisterCSUIReload();
         }
+
+        //protected override IEnumerable<UIElement> OnLoadUI()
+        //{
+        //    HorizontalAlignment = HorizontalAlignment.Left;
+        //    Orientation = Orientation.Horizontal;
+        //    Padding = new Thickness(10);
+        //    return Array.Empty<UIElement>();
+        //}
     }
 }

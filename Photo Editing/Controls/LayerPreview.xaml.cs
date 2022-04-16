@@ -15,7 +15,7 @@ using Windows.UI.Xaml.Navigation;
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     public sealed partial class LayerPreview : IDisposable
     {
@@ -74,6 +74,24 @@ namespace PhotoEditing
         public void Dispose()
         {
             
+        }
+
+        private void Duplicate(object _, RoutedEventArgs _1)
+        {
+            RightClickCommand.Hide();
+            Layer.Duplicate();
+        }
+
+        private void Copy(object _, RoutedEventArgs _1)
+        {
+            RightClickCommand.Hide();
+            Layer.CopyNoWait();
+        }
+
+        private void Cut(object _, RoutedEventArgs _1)
+        {
+            RightClickCommand.Hide();
+            Layer.CutNoWait();
         }
     }
 }

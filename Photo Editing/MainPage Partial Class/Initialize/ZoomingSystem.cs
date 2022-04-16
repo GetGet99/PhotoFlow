@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     partial class MainPage
     {

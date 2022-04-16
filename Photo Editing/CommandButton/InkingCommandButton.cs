@@ -4,7 +4,7 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml;
 using Microsoft.Toolkit.Uwp.UI;
 using System;
-namespace PhotoEditing
+namespace PhotoFlow
 {
     using CommandButton.Controls;
     public class InkingCommandButton : CommandButtonBase
@@ -59,7 +59,7 @@ namespace PhotoEditing
         protected override void LayerChanged(Layer.Layer Layer)
         {
             base.LayerChanged(Layer);
-            if (Layer != null && Layer.LayerType == PhotoEditing.Layer.Types.Inking)
+            if (Layer != null && Layer.LayerType == PhotoFlow.Layer.Types.Inking)
             {
                 InkLayer = (Layer.InkingLayer)Layer;
                 InkingCommandBar.InkControl.Visibility = Visibility.Visible;
@@ -72,7 +72,7 @@ namespace PhotoEditing
         protected override void RequestAddLayerEvent(Layer.Layer Layer)
         {
             base.RequestAddLayerEvent(Layer);
-            if (Layer != null && Layer.LayerType == PhotoEditing.Layer.Types.Inking)
+            if (Layer != null && Layer.LayerType == PhotoFlow.Layer.Types.Inking)
             {
                 var InkLayer = (Layer.InkingLayer)Layer;
                 InkLayer.DrawingAllowed.Value = true;
@@ -82,7 +82,7 @@ namespace PhotoEditing
         protected override void RequestRemoveLayerEvent(Layer.Layer Layer)
         {
             base.RequestRemoveLayerEvent(Layer);
-            if (Layer != null && Layer.LayerType == PhotoEditing.Layer.Types.Inking) ((Layer.InkingLayer)Layer).DrawingAllowed.Value = false;
+            if (Layer != null && Layer.LayerType == PhotoFlow.Layer.Types.Inking) ((Layer.InkingLayer)Layer).DrawingAllowed.Value = false;
         }
     }
 }

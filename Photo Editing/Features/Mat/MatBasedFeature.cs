@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PhotoEditing.Features.Mat
+namespace PhotoFlow.Features.Mat
 {
     public abstract class MatBasedFeature<TOutputType> : FeatureBase<OpenCvSharp.Mat, TOutputType>
     {

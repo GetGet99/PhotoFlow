@@ -8,7 +8,7 @@ using OpenCvSharp;
 using Windows.Storage.Streams;
 using Windows.UI.Xaml.Media.Imaging;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     partial class MainPage
     {

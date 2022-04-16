@@ -2,7 +2,7 @@
 using Windows.System;
 using Windows.UI.Xaml.Controls;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     partial class MainPage
     {
@@ -11,7 +11,7 @@ namespace PhotoEditing
         {
             public VariableUpdateAlert<CommandButtonBase> Selection { get; } = new VariableUpdateAlert<CommandButtonBase>();
 
-            readonly LayerContainer LayerContainer;
+            //readonly LayerContainer LayerContainer;
             public ButtonCollection(LayerContainer LayerContainer, ScrollViewer MainScrollViewer)
             {
                 Selection.Update += (oldValue, newValue) =>
@@ -19,7 +19,7 @@ namespace PhotoEditing
                     oldValue?.Deselect();
                     newValue?.Select();
                 };
-                this.LayerContainer = LayerContainer;
+                //this.LayerContainer = LayerContainer;
                 CollectionChanged += (o, e) =>
                 {
                     foreach (var nI in e.NewItems)
@@ -30,10 +30,10 @@ namespace PhotoEditing
                     }
                 };
             }
-            public void HotKey(VirtualKey Key)
-            {
+            //public void HotKey(VirtualKey Key)
+            //{
 
-            }
+            //}
             public void InvokeLayerChange()
             {
                 var val = Selection.GetValue();
@@ -56,10 +56,6 @@ namespace PhotoEditing
                 Buttons.Selection.Value = (CommandButtonBase)CommandBar.SelectedItem;
             };
             
-            KeyDown += (o, e) =>
-            {
-                Buttons.HotKey(e.Key);
-            };
             LayerContainer.SelectionUpdate += (oldVal, newVal) => Buttons.InvokeLayerChange();
             CommandBar.SelectedIndex = 0;
         }

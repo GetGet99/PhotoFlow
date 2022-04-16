@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31825.309
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Get Photo Editing", "Photo Editing\Get Photo Editing.csproj", "{AEFACE6F-145C-4C3C-BD27-90CC3EE59AA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotoFlow", "Photo Editing\PhotoFlow.csproj", "{AEFACE6F-145C-4C3C-BD27-90CC3EE59AA7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

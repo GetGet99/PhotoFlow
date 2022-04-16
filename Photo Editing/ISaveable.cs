@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PhotoEditing
+namespace PhotoFlow
 {
     public interface ISaveable
     {
-        JObject SaveData(bool onMainThread = false);
+        JObject SaveData();
         void LoadData(JObject bytes);
     }
 }
