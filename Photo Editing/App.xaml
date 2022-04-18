@@ -8,7 +8,7 @@
         <controls:XamlControlsResources>
             <controls:XamlControlsResources.MergedDictionaries>
                 <ResourceDictionary>
-                    <AcrylicBrush x:Name="DefaultAcrylicBackground" Opacity="1" TintOpacity="0.5" TintColor="{ThemeResource SystemColorBackgroundColor}"/>
+                    <AcrylicBrush x:Name="DefaultAcrylicBackground" Opacity="1" TintOpacity="0.5" TintColor="{ThemeResource SystemColorBackgroundColor}" FallbackColor="#19ffffff"/>
                     <Thickness x:Key="NavigationViewContentMargin">0,48,0,0</Thickness>
                     <Thickness x:Key="NavigationViewContentGridBorderThickness">0</Thickness>
                     <SolidColorBrush x:Key="NavigationViewContentBackground" Color="Transparent"></SolidColorBrush>

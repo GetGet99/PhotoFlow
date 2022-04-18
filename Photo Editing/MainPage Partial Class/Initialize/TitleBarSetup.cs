@@ -16,13 +16,31 @@ namespace PhotoFlow
         {
             var titleBar = ApplicationView.GetForCurrentView().TitleBar;
 
-            var Background = Colors.Transparent;
-            var Foreground = Colors.White;
-
-            titleBar.ButtonBackgroundColor = Background;
-            titleBar.ButtonInactiveBackgroundColor = Background;
-            titleBar.ButtonForegroundColor = Foreground;
-            titleBar.ButtonInactiveForegroundColor = Foreground;
+            void SetCaptionColor()
+            {
+                var Background = Colors.Transparent;
+                if (Application.Current.RequestedTheme == ApplicationTheme.Dark)
+                {
+                    Background.R = 0;
+                    Background.G = 0;
+                    Background.B = 0;
+                    Background.A = 0;
+                }
+                else
+                {
+                    Background.R = 255;
+                    Background.G = 255;
+                    Background.B = 255;
+                    Background.A = 0;
+                }
+                titleBar.ButtonBackgroundColor = Background;
+                titleBar.ButtonInactiveBackgroundColor = Background;
+            }
+            SetCaptionColor();
+            new UISettings().ColorValuesChanged += delegate
+            {
+                SetCaptionColor();
+            };
 
             var coreTitleBar = CoreApplication.GetCurrentView().TitleBar;
             coreTitleBar.ExtendViewIntoTitleBar = true;

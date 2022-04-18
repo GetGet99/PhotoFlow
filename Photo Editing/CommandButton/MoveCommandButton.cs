@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
-using Windows.Devices.Input;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using PhotoFlow.CommandButton.Controls;
@@ -33,27 +28,12 @@ namespace PhotoFlow
             MoveCommandBar.EnableResize.Command = ilc;
             MoveCommandBar.EnableRotate.Command = ilc;
 
-            //void UpdateFromKey(object o, KeyRoutedEventArgs e)
-            //{
-            //    if (e.Key == Windows.System.VirtualKey.Enter)
-            //    {
-            //        UpdateNumberFromTB();
-            //    }
-            //};
-            //MoveCommandBar.TB_X.KeyDown += UpdateFromKey;
-            //MoveCommandBar.TB_Y.KeyDown += UpdateFromKey;
-            //MoveCommandBar.TB_R.KeyDown += UpdateFromKey;
-            //MoveCommandBar.TB_S.KeyDown += UpdateFromKey;
             void UpdateNumberFromTBEV(NumberBox _, NumberBoxValueChangedEventArgs _1)
                 => UpdateNumberFromTB();
             MoveCommandBar.TB_X.ValueChanged += UpdateNumberFromTBEV;
             MoveCommandBar.TB_Y.ValueChanged += UpdateNumberFromTBEV;
             MoveCommandBar.TB_R.ValueChanged += UpdateNumberFromTBEV;
             MoveCommandBar.TB_S.ValueChanged += UpdateNumberFromTBEV;
-            //MoveCommandBar.TB_X.LostFocus += UpdateFromLostFocus;
-            //MoveCommandBar.TB_Y.LostFocus += UpdateFromLostFocus;
-            //MoveCommandBar.TB_R.LostFocus += UpdateFromLostFocus;
-            //MoveCommandBar.TB_S.LostFocus += UpdateFromLostFocus;
         }
 
         void UpdateNumberFromTB()
@@ -69,7 +49,6 @@ namespace PhotoFlow
             layer.ScaleX = scale;
             layer.ScaleY = scale;
             layer.Rotation = MoveCommandBar.TB_R.Value;
-            //LayerContainer.InvalidateArrange();
         }
         bool IsUpdatingNumberFromValue = false;
         void UpdateNumberFromValue()
@@ -130,31 +109,42 @@ namespace PhotoFlow
                     case VirtualKeyModifiers.Control:
                         if (MoveCommandBar.EnableResize.IsChecked.Value)
                         {
-                            dblDelta_Scroll = dblDelta_Scroll > 0 ? (dblDelta_Scroll * 0.001) : ((1 / -dblDelta_Scroll - 1) * 0.0325);
+                            dblDelta_Scroll = dblDelta_Scroll > 0 ? (dblDelta_Scroll * 0.0005) : ((1 / -dblDelta_Scroll - 1) * 0.0325);
                             dblDelta_Scroll += 1;
+                            Layer.CenterX = Layer.ActualWidth / 2;
+                            Layer.CenterY = Layer.ActualHeight / 2;
                             Layer.ScaleX *= dblDelta_Scroll;
                             Layer.ScaleY *= dblDelta_Scroll;
-                        } else
-                        {
-                            ScrollViewer.HorizontalScrollMode = ScrollMode.Enabled;
-                            ScrollViewer.VerticalScrollMode = ScrollMode.Enabled;
-                            ScrollViewer.ZoomMode = ZoomMode.Enabled;
-                            ScrollViewer.PointerReleased += delegate
-                            {
-                                ScrollViewer.HorizontalScrollMode = ScrollMode.Disabled;
-                                ScrollViewer.VerticalScrollMode = ScrollMode.Disabled;
-                                ScrollViewer.ZoomMode = ZoomMode.Disabled;
-                            };
-                            ScrollViewer.CapturePointer(e.Pointer);
-                            Layer.LayerUIElement.ReleasePointerCapture(e.Pointer);
+                            UpdateNumberFromValue();
+                            break;
                         }
-                        break;
+                        else goto ReleasePointerToScrollView;
                     case VirtualKeyModifiers.Shift:
                         if (MoveCommandBar.EnableRotate.IsChecked.Value)
+                        {
                             Layer.Rotation += dblDelta_Scroll * 0.01;
+                            UpdateNumberFromValue();
+                        }
+                        else goto ReleasePointerToScrollView;
                         break;
+                    default:
+                        goto ReleasePointerToScrollView;
                 }
             }
+            return;
+        ReleasePointerToScrollView:
+            ScrollViewer.HorizontalScrollMode = ScrollMode.Enabled;
+            ScrollViewer.VerticalScrollMode = ScrollMode.Enabled;
+            ScrollViewer.ZoomMode = ZoomMode.Enabled;
+            ScrollViewer.PointerReleased += delegate
+            {
+                ScrollViewer.HorizontalScrollMode = ScrollMode.Disabled;
+                ScrollViewer.VerticalScrollMode = ScrollMode.Disabled;
+                ScrollViewer.ZoomMode = ZoomMode.Disabled;
+            };
+            ScrollViewer.CapturePointer(e.Pointer);
+            Layer.LayerUIElement.ReleasePointerCapture(e.Pointer);
+            return;
         }
 
         protected override void RequestAddLayerEvent(Layer.Layer Layer)
@@ -196,15 +186,6 @@ namespace PhotoFlow
             Element.PointerExited -= PointerExited;
             PointerExited(null, null);
         }
-
-        //class Move : CommandButtonCommandBar
-        //{
-        //    protected override IEnumerable<UIElement> OnLoadUI()
-        //    {
-        //        base.OnLoadUI();
-        //        yield return 
-        //    }
-        //}
     }
     class LambdaCommand : System.Windows.Input.ICommand
     {
@@ -215,7 +196,7 @@ namespace PhotoFlow
         }
         public LambdaCommand(Action a)
         {
-            Action = _ => a();
+            Action = _ => a?.Invoke();
         }
         public LambdaCommand()
         {

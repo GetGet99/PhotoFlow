@@ -27,13 +27,14 @@
 			cg:CustomGrid.GridType="Auto"
 		>
             <StackPanel Orientation="Horizontal" Grid.Column="0" cg:CustomGrid.GridType="Auto">
-                <Image x:Name="AppFontIcon"
+                <IconSourceElement x:Name="AppFontIcon"
                     HorizontalAlignment="Left" 
                     VerticalAlignment="Center"
-                    Source="Assets/Square44x44Logo.png" 
                     Width="16"
                     Margin="12,0,12,0"
-                    Height="16"/>
+                    Height="16">
+                    <BitmapIconSource UriSource="Assets/StoreLogo.scale-400.png"/>
+                </IconSourceElement>
                 <muxc:MenuBar VerticalAlignment="Center" Margin="0">
                     <muxc:MenuBarItem Title="File" Margin="0" CornerRadius="10">
                         <MenuFlyoutItem Text="New" Icon="Add" Click="New">
