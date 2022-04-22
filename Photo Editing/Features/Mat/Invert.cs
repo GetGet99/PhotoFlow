@@ -4,15 +4,12 @@ using OpenCvSharp;
 using CvMat = OpenCvSharp.Mat;
 namespace PhotoFlow.Features.Mat
 {
-    public class Invert : MatBasedFeature<CvMat>
+    public class Invert : MatBasedFeature<CvMat>, IFeatureUndoRedoable
     {
         public override string FeatureName => $"{base.FeatureName}.Invert";
 
-        public override bool IsAvaliable(IFeatureDataTypes<CvMat> Input) => Input.Value != null;
-
-        public override bool HasDialog { get; } = false;
-        public override ThemeContentDialog CallDialog { get; } = null;
-
+        public override bool IsAvaliableForward(IFeatureDataTypes<CvMat> Input) => Input.Value != null;
+        
         public override void LoadFromJSON(JObject obj) => DoNothing();
 
         public override JObject SaveJSON()
@@ -20,9 +17,16 @@ namespace PhotoFlow.Features.Mat
                 new JProperty("Feature", FeatureName),
                 new JProperty("Parameters", Array.Empty<string>())
             );
-        public override IFeatureDataTypes<CvMat> Apply(IFeatureDataTypes<CvMat> Input)
+        CvMat Mat { get; set; }
+        public override IFeatureDataTypes<CvMat> ForwardApply(IFeatureDataTypes<CvMat> Input)
         {
+            if (!IsAvaliableForward(Input)) throw new ArgumentException($"{nameof(IsAvaliableForward)}({nameof(Input)}) == {false}");
+            Mat = Input;
             return Input.Value.Invert();
+        }
+        public void Undo()
+        {
+            return Mat.Invert();
         }
     }
 }

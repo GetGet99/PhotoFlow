@@ -28,7 +28,9 @@ namespace PhotoFlow
             ImageCommandBar.Invert.Click += (s, e) =>
             {
                 var MatFeatureApplyable = this.MatFeatureApplyable;
-                MatFeatureApplyable?.ApplyFeature(new Features.Mat.Invert());
+                var feat = new Features.Mat.Invert();
+                MatFeatureApplyable?.ApplyFeature(feat);
+                LayerContainer.History.Add(feat);
             };
         }
     }

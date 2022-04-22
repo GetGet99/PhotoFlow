@@ -23,6 +23,7 @@ namespace PhotoFlow
 {
     public sealed partial class LayerContainer : Panel
     {
+        public List<Features.IFeatureUndoRedoable> History { get; } = new List<Features.IFeatureUndoRedoable>();
         public ObservableCollection<Layer.Layer> Layers { get; } = new ObservableCollection<Layer.Layer>();
         public delegate void SelectionUpdateHandler(int OldIndex, int NewINdex);
         public event SelectionUpdateHandler SelectionUpdate;

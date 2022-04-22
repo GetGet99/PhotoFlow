@@ -12,7 +12,7 @@ namespace PhotoFlow.Features.Mat
         IFeatureDataTypes<uint> Height;
         public override string FeatureName => $"{base.FeatureName}.Crop";
 
-        public override bool IsAvaliable(IFeatureDataTypes<CvMat> Input) => Input.Value != null;
+        public override bool IsAvaliableForward(IFeatureDataTypes<CvMat> Input) => Input.Value != null;
 
         public override bool HasDialog { get; } = true;
         public override ThemeContentDialog CallDialog { get; } = new ThemeContentDialog
@@ -38,7 +38,7 @@ namespace PhotoFlow.Features.Mat
             Width = token["Width"].ToObject<uint>();
             Height = token["Height"].ToObject<uint>();
         }
-        public override IFeatureDataTypes<CvMat> Apply(IFeatureDataTypes<CvMat> Input)
+        public override IFeatureDataTypes<CvMat> ForwardApply(IFeatureDataTypes<CvMat> Input)
         {
             return Input.Value.SubMat((int)Y.Value, (int)Y.Value + (int)Height.Value, (int)X.Value, (int)X.Value + (int)Width.Value);
         }

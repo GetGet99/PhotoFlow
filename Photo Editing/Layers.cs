@@ -394,7 +394,7 @@ namespace PhotoFlow.Layer
 
         public void ApplyFeature(Features.Mat.MatBasedFeature<Mat> Feature)
         {
-            HardSelectedPartEdit = Feature.Apply(Mat);
+            HardSelectedPartEdit = Feature.ForwardApply(Mat);
             UpdateImage();
         }
     }

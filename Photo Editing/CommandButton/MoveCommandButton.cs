@@ -136,14 +136,17 @@ namespace PhotoFlow
             ScrollViewer.HorizontalScrollMode = ScrollMode.Enabled;
             ScrollViewer.VerticalScrollMode = ScrollMode.Enabled;
             ScrollViewer.ZoomMode = ZoomMode.Enabled;
+            Layer.LayerUIElement.IsHitTestVisible = false;
             ScrollViewer.PointerReleased += delegate
             {
                 ScrollViewer.HorizontalScrollMode = ScrollMode.Disabled;
                 ScrollViewer.VerticalScrollMode = ScrollMode.Disabled;
                 ScrollViewer.ZoomMode = ZoomMode.Disabled;
+                Layer.LayerUIElement.IsHitTestVisible = true;
             };
-            ScrollViewer.CapturePointer(e.Pointer);
             Layer.LayerUIElement.ReleasePointerCapture(e.Pointer);
+            ScrollViewer.CapturePointer(e.Pointer);
+            e.Handled = false;
             return;
         }
 
