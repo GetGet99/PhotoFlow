@@ -12,12 +12,6 @@
     <Button x:Name="CreateRectangle" x:FieldModifier="Public" Content="Create Rectangle" Margin="0,0,10,0"/>
     <Button x:Name="CreateEllipse" x:FieldModifier="Public" Content="Create Ellipse" Margin="0,0,10,0"/>
     <StackPanel x:FieldModifier="Public" x:Name="LayerEditorControls" Orientation="Horizontal" VerticalAlignment="Center">
-        <Grid VerticalAlignment="Center">
-            <TextBlock Text="Width:"/>
-        </Grid>
-        <muxc:NumberBox x:FieldModifier="Public" x:Name="WidthField" Margin="16,0,16,0" Width="100" VerticalAlignment="Center"/>
-        <TextBlock Text="Height:" VerticalAlignment="Center"/>
-        <muxc:NumberBox x:FieldModifier="Public" x:Name="HeightField" Margin="16,0,16,0" Width="100"/>
         <CheckBox x:FieldModifier="Public" x:Name="Acrylic" MinWidth="0" Margin="0,3,16,0" VerticalAlignment="Center" Content="Acrylic"/>
         <TextBlock Text="Color:" VerticalAlignment="Center"/>
         <Button x:FieldModifier="Public" x:Name="ColorPickerButton" Width="30" Height="30" Margin="16,0,16,0">
@@ -45,6 +39,7 @@
                     Minimum="0" Maximum="100" StepFrequency="1"/>
             </Grid>
         </StackPanel>
+        <local:PropertiesButton x:Name="PropertiesButton" x:FieldModifier="public" Margin="10,0,0,0"/>
     </StackPanel>
 
 </local:CommandButtonCommandBar>

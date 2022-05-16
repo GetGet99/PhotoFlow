@@ -13,7 +13,7 @@ namespace PhotoFlow.Features.Mat
         public override void LoadFromJSON(JObject obj) => DoNothing();
 
         public override JObject SaveJSON()
-            => new JObject(
+            => new (
                 new JProperty("Feature", FeatureName),
                 new JProperty("Parameters", Array.Empty<string>())
             );
@@ -26,7 +26,12 @@ namespace PhotoFlow.Features.Mat
         }
         public void Undo()
         {
-            return Mat.Invert();
+            //return Mat.Invert();
+        }
+
+        public void Redo()
+        {
+            throw new NotImplementedException();
         }
     }
 }

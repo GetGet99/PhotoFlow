@@ -45,6 +45,7 @@ namespace PhotoFlow
             Buttons = new ButtonCollection(LayerContainer, MainScrollView)
             {
                 new MoveCommandButton(CommandBarPlace),
+                new PropertiesCommandButton(CommandBarPlace),
                 new InkingCommandButton(CommandBarPlace),
                 new ImageCommandButton(CommandBarPlace),
                 new TextCommandButton(CommandBarPlace),

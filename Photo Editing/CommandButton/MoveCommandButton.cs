@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Core;
@@ -6,12 +7,13 @@ using Windows.UI.Xaml;
 using PhotoFlow.CommandButton.Controls;
 using Microsoft.UI.Xaml.Controls;
 using Windows.System;
+using System.Diagnostics;
 
 namespace PhotoFlow
 {
     public class MoveCommandButton : CommandButtonBase
     {
-        private readonly Move MoveCommandBar = new Move();
+        private readonly Move MoveCommandBar = new ();
         protected override CommandButtonCommandBar CommandBar => MoveCommandBar;
 
         public MoveCommandButton(Border CommandBarPlace) : base(Symbol.TouchPointer, CommandBarPlace)
@@ -62,7 +64,6 @@ namespace PhotoFlow
         }
         private void ManipulationDeltaEvent(object sender, ManipulationDeltaRoutedEventArgs e)
         {
-
             var layer = CurrentLayer;
 
             if (e.Container != null)
@@ -84,48 +85,53 @@ namespace PhotoFlow
             e.Handled = true;
             UpdateNumberFromValue();
         }
-        private void PointerEntered(object sender, PointerRoutedEventArgs e)
+        private void PointerEntered(object? _, PointerRoutedEventArgs? _1)
         {
             Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.SizeAll, 1);
-            ScrollViewer.HorizontalScrollMode = ScrollMode.Disabled;
-            ScrollViewer.VerticalScrollMode = ScrollMode.Disabled;
-            ScrollViewer.ZoomMode = ZoomMode.Disabled;
         }
-        private void PointerExited(object sender, PointerRoutedEventArgs e)
+        private void PointerExited(object? _, PointerRoutedEventArgs? _1)
         {
             Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.Arrow, 1);
-            ScrollViewer.HorizontalScrollMode = ScrollMode.Enabled;
-            ScrollViewer.VerticalScrollMode = ScrollMode.Enabled;
-            ScrollViewer.ZoomMode = ZoomMode.Enabled;
         }
-
-        private void PoitnerWheel(object sender, PointerRoutedEventArgs e)
+        //int NotSameCount = 0;
+        //bool PreviouslyScrollUp = false;
+        private void PointerWheel(object sender, PointerRoutedEventArgs e)
         {
             if (CurrentLayer is Layer.Layer Layer)
             {
                 double dblDelta_Scroll = e.GetCurrentPoint(Layer.LayerUIElement).Properties.MouseWheelDelta;
                 switch (e.KeyModifiers)
                 {
-                    case VirtualKeyModifiers.Control:
-                        if (MoveCommandBar.EnableResize.IsChecked.Value)
-                        {
-                            dblDelta_Scroll = dblDelta_Scroll > 0 ? (dblDelta_Scroll * 0.0005) : ((1 / -dblDelta_Scroll - 1) * 0.0325);
-                            dblDelta_Scroll += 1;
-                            Layer.CenterX = Layer.ActualWidth / 2;
-                            Layer.CenterY = Layer.ActualHeight / 2;
-                            Layer.ScaleX *= dblDelta_Scroll;
-                            Layer.ScaleY *= dblDelta_Scroll;
-                            UpdateNumberFromValue();
-                            break;
-                        }
-                        else goto ReleasePointerToScrollView;
+                    case VirtualKeyModifiers.Control | VirtualKeyModifiers.Shift:
+                        //bool ScrollUp = dblDelta_Scroll > 0;
+                        Debug.WriteLine(dblDelta_Scroll);
+                        //if (PreviouslyScrollUp != ScrollUp)
+                        //{
+                        //    NotSameCount++;
+                        //    if (NotSameCount > 2) PreviouslyScrollUp = ScrollUp;
+                        //    break;
+                        //}
+                        //else NotSameCount = 0;
+                        //dblDelta_Scroll = dblDelta_Scroll > 0 ? (dblDelta_Scroll * 0.0005) : ((1 / -dblDelta_Scroll - 1) * 0.0325);
+                        //var sign = dblDelta_Scroll > 0 ? 1 : -1;
+                        //dblDelta_Scroll = sign;
+                        //dblDelta_Scroll = Math.Abs(dblDelta_Scroll);
+                        //dblDelta_Scroll = dblDelta_Scroll > 100 ? 100 : dblDelta_Scroll;
+                        dblDelta_Scroll = dblDelta_Scroll > 0 ? 5 : -5;
+                        //dblDelta_Scroll *= sign;
+                        dblDelta_Scroll = dblDelta_Scroll > 0 ? (dblDelta_Scroll * 0.0002) : ((1 / -dblDelta_Scroll - 1) * 0.002);
+                        dblDelta_Scroll += 1;
+                        Layer.CenterX = Layer.ActualWidth / 2;
+                        Layer.CenterY = Layer.ActualHeight / 2;
+                        Layer.ScaleX *= dblDelta_Scroll;
+                        Layer.ScaleY *= dblDelta_Scroll;
+                        UpdateNumberFromValue();
+                        break;
                     case VirtualKeyModifiers.Shift:
-                        if (MoveCommandBar.EnableRotate.IsChecked.Value)
-                        {
-                            Layer.Rotation += dblDelta_Scroll * 0.01;
-                            UpdateNumberFromValue();
-                        }
-                        else goto ReleasePointerToScrollView;
+                        Layer.CenterX = Layer.ActualWidth / 2;
+                        Layer.CenterY = Layer.ActualHeight / 2;
+                        Layer.Rotation += dblDelta_Scroll * 0.01;
+                        UpdateNumberFromValue();
                         break;
                     default:
                         goto ReleasePointerToScrollView;
@@ -150,28 +156,59 @@ namespace PhotoFlow
             return;
         }
 
+        void KeyDownHandle(CoreWindow C, KeyEventArgs e)
+        {
+            if (C.GetKeyState(VirtualKey.Shift) != CoreVirtualKeyStates.None && CurrentLayer != null)
+            {
+                var Element = CurrentLayer.LayerUIElement;
+                Element.PointerWheelChanged += PointerWheel;
+                Element.ManipulationMode &= ~ManipulationModes.System;
+                ScrollViewer.HorizontalScrollMode = ScrollMode.Disabled;
+                ScrollViewer.VerticalScrollMode = ScrollMode.Disabled;
+                ScrollViewer.ZoomMode = ZoomMode.Disabled;
+            }
+        }
+        void CancelWheelIfKeyUp()
+        {
+            var Element = CurrentLayer.LayerUIElement;
+            if (Element == null) return;
+            Element.PointerWheelChanged -= PointerWheel;
+            ScrollViewer.HorizontalScrollMode = ScrollMode.Enabled;
+            ScrollViewer.VerticalScrollMode = ScrollMode.Enabled;
+            ScrollViewer.ZoomMode = ZoomMode.Enabled;
+        }
+        void KeyUpHandle(CoreWindow C, KeyEventArgs e)
+        {
+            if (C.GetKeyState(VirtualKey.Shift) == CoreVirtualKeyStates.None && CurrentLayer != null)
+            {
+                CurrentLayer.LayerUIElement.ManipulationMode |= ManipulationModes.System;
+                CancelWheelIfKeyUp();
+            }
+        }
         protected override void RequestAddLayerEvent(Layer.Layer Layer)
         {
             base.RequestAddLayerEvent(Layer);
             var Element = Layer.LayerUIElement;
-            if (MoveCommandBar.EnableMove.IsChecked.Value)
+            if (MoveCommandBar.EnableMove.IsChecked ?? false)
             {
                 Element.ManipulationMode |= ManipulationModes.TranslateX;
                 Element.ManipulationMode |= ManipulationModes.TranslateY;
             }
-            if (MoveCommandBar.EnableResize.IsChecked.Value)
-            {
-                Element.ManipulationMode &= ~ManipulationModes.System;
-                Element.ManipulationMode |= ManipulationModes.Scale;
-            }
-            if (MoveCommandBar.EnableRotate.IsChecked.Value)
-            {
-                Element.ManipulationMode |= ManipulationModes.Rotate;
-            }
+            Element.ManipulationMode &= ~ManipulationModes.System;
+            //if (MoveCommandBar.EnableResize.IsChecked ?? false)
+            //{
+            //    Element.ManipulationMode |= ManipulationModes.Scale;
+            //}
+            //if (MoveCommandBar.EnableRotate.IsChecked ?? false)
+            //{
+            //    Element.ManipulationMode |= ManipulationModes.Rotate;
+            //}
             Element.ManipulationDelta += ManipulationDeltaEvent;
-            Element.PointerEntered += PointerEntered;
-            Element.PointerWheelChanged += PoitnerWheel;
-            Element.PointerExited += PointerExited;
+            //Element.PointerEntered += PointerEntered;
+            //Element.PointerExited += PointerExited;
+            //Element.PointerCaptureLost += PointerExited;
+            Window.Current.CoreWindow.KeyDown += KeyDownHandle;
+            Window.Current.CoreWindow.KeyUp += KeyUpHandle;
             UpdateNumberFromValue();
         }
 
@@ -182,12 +219,16 @@ namespace PhotoFlow
             var Element = Layer.LayerUIElement;
             Element.ManipulationMode &= ~ManipulationModes.TranslateX;
             Element.ManipulationMode &= ~ManipulationModes.TranslateY;
-            Element.ManipulationMode &= ~ManipulationModes.Scale;
-            Element.ManipulationMode &= ~ManipulationModes.Rotate;
+            //Element.ManipulationMode &= ~ManipulationModes.Scale;
+            //Element.ManipulationMode &= ~ManipulationModes.Rotate;
             Element.ManipulationDelta -= ManipulationDeltaEvent;
-            Element.PointerEntered -= PointerEntered;
-            Element.PointerExited -= PointerExited;
-            PointerExited(null, null);
+            //Element.PointerEntered -= PointerEntered;
+            //Element.PointerExited -= PointerExited;
+            //Element.PointerCaptureLost -= PointerExited;
+            //PointerExited(null, null);
+            Window.Current.CoreWindow.KeyDown -= KeyDownHandle;
+            Window.Current.CoreWindow.KeyUp -= KeyUpHandle;
+            //CancelWheelIfKeyUp();
         }
     }
     class LambdaCommand : System.Windows.Input.ICommand
@@ -203,9 +244,10 @@ namespace PhotoFlow
         }
         public LambdaCommand()
         {
+            Action = delegate { };
         }
 #pragma warning disable
-        public event EventHandler CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged;
 #pragma warning restore
         public bool CanExecute(object parameter) => true;
 
@@ -213,6 +255,6 @@ namespace PhotoFlow
         {
             Action?.Invoke(parameter);
         }
-        public static implicit operator LambdaCommand(Action a) => new LambdaCommand(a);
+        public static implicit operator LambdaCommand(Action a) => new (a);
     }
 }

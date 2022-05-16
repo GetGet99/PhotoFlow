@@ -186,7 +186,7 @@ namespace PhotoFlow
             foreach (UIElement UIELE in Children)
             {
                 var Layer = (Grid)UIELE;
-                Layer.Measure(new Size(ActualWidth, ActualHeight));
+                Layer.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                 Layer.Arrange(new Rect(0, 0, Layer.DesiredSize.Width, Layer.DesiredSize.Height));
             }
 

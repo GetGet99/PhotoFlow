@@ -2,6 +2,8 @@
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
+    <LangVersion>10.0</LangVersion>
+    <AppxBundlePlatforms>x86|x64|arm</AppxBundlePlatforms>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProjectGuid>{AEFACE6F-145C-4C3C-BD27-90CC3EE59AA7}</ProjectGuid>
@@ -120,21 +122,17 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="CommandButton\Controls\CommandButtonCommandBar.cs" />
-    <Compile Include="CommandButton\Controls\Image.xaml.cs">
-      <DependentUpon>Image.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="CommandButton\Controls\Inking.xaml.cs">
-      <DependentUpon>Inking.xaml</DependentUpon>
-    </Compile>
     <Compile Include="CommandButton\Controls\Move.xaml.cs">
       <DependentUpon>Move.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CommandButton\Controls\Properties.cs" />
     <Compile Include="CommandButton\Controls\Shape.xaml.cs">
       <DependentUpon>Shape.xaml</DependentUpon>
     </Compile>
     <Compile Include="CommandButton\Controls\Text.xaml.cs">
       <DependentUpon>Text.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CommandButton\PropertiesCommandButton.cs" />
     <Compile Include="CommandButton\ImageCommandButton.cs" />
     <Compile Include="CommandButton\ShapeCommandButton.cs" />
     <Compile Include="CommandButton\TextCommandButton.cs" />
@@ -254,14 +252,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="CommandButton\Controls\Image.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="CommandButton\Controls\Inking.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="CommandButton\Controls\Move.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -308,6 +298,9 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="IndexRange">
+      <Version>1.0.2</Version>
+    </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>6.2.13</Version>
     </PackageReference>
@@ -323,9 +316,20 @@
     <PackageReference Include="OpenCvSharp4.Windows">
       <Version>4.5.5.20211231</Version>
     </PackageReference>
+    <PackageReference Include="TA.System.Runtime.CompilerServices.RuntimeHelpers.GetSubArray">
+      <Version>1.0.1</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Win2D.uwp">
       <Version>1.26.0</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\Get\source\repos\Photo Editing\CSharpUI\CSharpUI.csproj">
+      <Project>{2f50b8ea-2f62-4fb9-b2b0-794aee021851}</Project>
+      <Name>CSharpUI</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

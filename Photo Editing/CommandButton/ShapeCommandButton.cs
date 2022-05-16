@@ -15,7 +15,7 @@ namespace PhotoFlow
 {
     public class ShapeCommandButton : CommandButtonBase
     {
-        private readonly Shape ShapeCommandBar = new Shape();
+        private readonly Shape ShapeCommandBar = new ();
         protected override CommandButtonCommandBar CommandBar => ShapeCommandBar;
 
         public ShapeCommandButton(Border CommandBarPlace) : base(Symbol.Stop, CommandBarPlace)
@@ -54,14 +54,7 @@ namespace PhotoFlow
             {
                 if (CurrentLayer is Layer.ShapeLayer ShapeLayer) ShapeLayer.Color = ShapeCommandBar.ColorPicker.Color;
             };
-            ShapeCommandBar.WidthField.ValueChanged += delegate
-            {
-                if (CurrentLayer is Layer.ShapeLayer ShapeLayer) ShapeLayer.Width = ShapeCommandBar.WidthField.Value;
-            };
-            ShapeCommandBar.HeightField.ValueChanged += delegate
-            {
-                if (CurrentLayer is Layer.ShapeLayer ShapeLayer) ShapeLayer.Height = ShapeCommandBar.HeightField.Value;
-            };
+            
             ShapeCommandBar.OpacityField.ValueChanged += delegate
             {
                 if (CurrentLayer is Layer.ShapeLayer ShapeLayer) ShapeLayer.Opacity = ShapeCommandBar.OpacityField.Value / 100;
@@ -81,11 +74,9 @@ namespace PhotoFlow
             {
                 ShapeCommandBar.Acrylic.IsChecked = ShapeLayer.Acrylic;
                 ShapeCommandBar.ColorPicker.Color = ShapeLayer.Color;
-                ShapeCommandBar.WidthField.Value = ShapeLayer.Width;
-                ShapeCommandBar.HeightField.Value = ShapeLayer.Height;
                 ShapeCommandBar.OpacityField.Value = ShapeLayer.Opacity * 100;
                 ShapeCommandBar.TintOpacityField.Value = ShapeLayer.TintOpacity * 100;
-
+                ShapeCommandBar.PropertiesButton.Layer = ShapeLayer;
             }
         }
     }

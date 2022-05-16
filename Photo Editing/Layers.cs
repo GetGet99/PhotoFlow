@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Threading.Tasks;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -137,30 +138,37 @@ namespace PhotoFlow.Layer
 
         public void LoadData(JObject json)
         {
-            LayerName.Value = json["LayerName"].ToObject<string>();
-            var CenterPoint = json["CenterPoint"].ToObject<double[]>();
-            var Scale = json["Scale"].ToObject<double[]>();
+            LayerName.Value = json["LayerName"]?.ToObject<string>();
+            var CenterPoint = json["CenterPoint"]?.ToObject<double[]>();
+            var Scale = json["Scale"]?.ToObject<double[]>();
 
-            var X = json["X"].ToObject<double>();
-            var Y = json["Y"].ToObject<double>();
-            var Rotation = json["Rotation"].ToObject<double>();
-            var Width = json["Width"].ToObject<double>();
-            var Height = json["Height"].ToObject<double>();
+            var X = json["X"]?.ToObject<double>();
+            var Y = json["Y"]?.ToObject<double>();
+            var Rotation = json["Rotation"]?.ToObject<double>();
+            var Width = json["Width"]?.ToObject<double>();
+            var Height = json["Height"]?.ToObject<double>();
 
             var Task = Extension.RunOnUIThreadAsync(() =>
             {
-                CenterX = CenterPoint[0];
-                CenterY = CenterPoint[1];
-                this.X = X;
-                this.Y = Y;
-                this.Rotation = Rotation;
-                ScaleX = Scale[0];
-                ScaleY = Scale[1];
-                this.Width = Width;
-                this.Height = Height;
+                if (CenterPoint != null)
+                {
+                    CenterX = CenterPoint[0];
+                    CenterY = CenterPoint[1];
+                }
+                if (X != null) this.X = X.Value;
+                if (Y != null) this.Y = Y.Value;
+                if (Rotation != null) this.Rotation = Rotation.Value;
+                if (Scale != null)
+                {
+                    ScaleX = Scale[0];
+                    ScaleY = Scale[1];
+                }
+                if (Width != null) this.Width = Width.Value;
+                if (Height != null) this.Height = Height.Value;
             });
 
-            OnDataLoading(json["AdditionalData"].ToObject<JObject>(), Task);
+            var additionalData = json["AdditionalData"]?.ToObject<JObject>();
+            if (additionalData != null) OnDataLoading(additionalData, Task);
             if (!Task.IsCompleted) Task.Wait();
         }
 
@@ -360,7 +368,7 @@ namespace PhotoFlow.Layer
             var height = m.Height;
             Extension.RunOnUIThread(() =>
             {
-                
+
                 Image = new Image();
                 UpdateImage();
                 LayerUIElement.Children.Add(Image);
@@ -402,8 +410,8 @@ namespace PhotoFlow.Layer
     {
 
         public override Types LayerType { get; } = Types.Inking;
-        public readonly VariableUpdateAlert<bool> TouchAllowed = new VariableUpdateAlert<bool>();
-        public readonly VariableUpdateAlert<bool> DrawingAllowed = new VariableUpdateAlert<bool>();
+        public readonly VariableUpdateAlert<bool> TouchAllowed = new ();
+        public readonly VariableUpdateAlert<bool> DrawingAllowed = new ();
         public InkCanvas InkCanvas { get; private set; }
         public InkingLayer(Rect Where)
         {
