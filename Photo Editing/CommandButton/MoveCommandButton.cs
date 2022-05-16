@@ -195,14 +195,16 @@ namespace PhotoFlow
                 Element.ManipulationMode |= ManipulationModes.TranslateY;
             }
             Element.ManipulationMode &= ~ManipulationModes.System;
-            //if (MoveCommandBar.EnableResize.IsChecked ?? false)
-            //{
-            //    Element.ManipulationMode |= ManipulationModes.Scale;
-            //}
-            //if (MoveCommandBar.EnableRotate.IsChecked ?? false)
-            //{
-            //    Element.ManipulationMode |= ManipulationModes.Rotate;
-            //}
+            if (MoveCommandBar.EnableResize.IsChecked ?? false)
+            {
+                Element.ManipulationMode &= ~ManipulationModes.System;
+                Element.ManipulationMode |= ManipulationModes.Scale;
+            }
+            if (MoveCommandBar.EnableRotate.IsChecked ?? false)
+            {
+                Element.ManipulationMode &= ~ManipulationModes.System;
+                Element.ManipulationMode |= ManipulationModes.Rotate;
+            }
             Element.ManipulationDelta += ManipulationDeltaEvent;
             //Element.PointerEntered += PointerEntered;
             //Element.PointerExited += PointerExited;
@@ -219,8 +221,9 @@ namespace PhotoFlow
             var Element = Layer.LayerUIElement;
             Element.ManipulationMode &= ~ManipulationModes.TranslateX;
             Element.ManipulationMode &= ~ManipulationModes.TranslateY;
-            //Element.ManipulationMode &= ~ManipulationModes.Scale;
-            //Element.ManipulationMode &= ~ManipulationModes.Rotate;
+            Element.ManipulationMode &= ~ManipulationModes.Scale;
+            Element.ManipulationMode &= ~ManipulationModes.Rotate;
+            Element.ManipulationMode |= ManipulationModes.System;
             Element.ManipulationDelta -= ManipulationDeltaEvent;
             //Element.PointerEntered -= PointerEntered;
             //Element.PointerExited -= PointerExited;
