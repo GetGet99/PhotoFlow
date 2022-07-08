@@ -115,5 +115,10 @@ namespace PhotoFlow
         {
             return (TChild)o;
         }
+        public static T Assign<T>(T item, out T variable)
+        {
+            variable = item;
+            return item;
+        }
     }
 }

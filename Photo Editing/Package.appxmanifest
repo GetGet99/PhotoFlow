@@ -8,14 +8,14 @@
   IgnorableNamespaces="uap mp rescap">
 
   <Identity
-    Name="9427d7d2-c0eb-4d87-a9fc-9a2f96c05937"
-    Publisher="CN=Get"
-    Version="1.0.0.0" />
+    Name="3749Get.64306B5598F19"
+    Publisher="CN=95122495-0FC5-4CBE-B461-D28358AFE57A"
+    Version="1.0.1.0" />
 
-  <mp:PhoneIdentity PhoneProductId="9427d7d2-c0eb-4d87-a9fc-9a2f96c05937" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="6e7f3f59-98d3-4f9f-a79e-9f9712a86386" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>Photo Editing</DisplayName>
+    <DisplayName>Photo Flow</DisplayName>
     <PublisherDisplayName>Get</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>

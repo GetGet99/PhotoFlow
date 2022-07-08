@@ -534,6 +534,15 @@ namespace PhotoFlow.Layer
                 if (TextBlock != null && value.HasValue) TextBlock.FontSize = value.Value;
             }
         }
+        Color _TextColor = Colors.White;
+        public Color TextColor
+        {
+            get => (TextBlock.Foreground as SolidColorBrush ?? throw new InvalidCastException()).Color;
+            set
+            {
+                if (TextBlock != null) TextBlock.Foreground = new SolidColorBrush(value);
+            }
+        }
 
         public TextLayer(JObject json)
         {
@@ -557,7 +566,8 @@ namespace PhotoFlow.Layer
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     VerticalAlignment = VerticalAlignment.Stretch,
                     CanBeScrollAnchor = false,
-                    Text = _Text
+                    Text = _Text,
+                    Foreground = new SolidColorBrush(_TextColor)
                 };
                 if (_Font != null) TextBlock.FontFamily = _Font;
                 if (_FontSize.HasValue) TextBlock.FontSize = _FontSize.Value;
@@ -570,16 +580,21 @@ namespace PhotoFlow.Layer
         {
             string Text = "", FontFamily = "";
             double FontSize = default;
+            Color TextColor = default;
             Extension.RunOnUIThread(() =>
             {
                 Text = this.Text;
                 FontFamily = Font.Source;
                 FontSize = this.FontSize.Value;
+                TextColor = this.TextColor;
             });
             return new JObject(
                 new JProperty("Text", Text),
                 new JProperty("FontFamily", FontFamily),
-                new JProperty("FontSize", FontSize)
+                new JProperty("FontSize", FontSize),
+                new JProperty("TextColor", new JObject(
+                    //Unfinished Region
+                ))
             );
         }
 

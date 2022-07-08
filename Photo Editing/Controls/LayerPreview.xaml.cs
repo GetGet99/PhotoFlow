@@ -26,7 +26,8 @@ namespace PhotoFlow
             Image.Source = null;
 
             Layer = YourLayer;
-
+            if (YourLayer is Layer.MatLayer)
+                SendToPhotoToys.Visibility = Visibility.Visible;
             ButtonOverlay.Click += (o, e) => Layer.SelectionIndexUpdateTarget.Value = Layer.Index;
         }
         public string LayerName { get => LayerNameTextBlock.Text; set => LayerNameTextBlock.Text = value; }
@@ -92,6 +93,14 @@ namespace PhotoFlow
         {
             RightClickCommand.Hide();
             Layer.CutNoWait();
+        }
+
+        private async void Send2PhotoToys(object _, RoutedEventArgs _1)
+        {
+            if (Layer is Layer.MatLayer matLayer)
+            {
+                await matLayer.Mat.ImShow("Send To PhotoToys (Drag And Drop The Image)", XamlRoot);
+            }
         }
     }
 }

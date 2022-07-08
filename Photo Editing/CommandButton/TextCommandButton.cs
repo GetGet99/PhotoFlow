@@ -4,6 +4,8 @@ using PhotoFlow.CommandButton.Controls;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml;
 using CSharpUI;
+using ColorPicker = Microsoft.UI.Xaml.Controls.ColorPicker;
+using Windows.UI.Xaml.Media;
 
 namespace PhotoFlow;
 
@@ -54,6 +56,7 @@ public class TextCommandButton : CommandButtonBase
         {
             TextCommandBar.TextBox.Text = TextLayer.Text;
             TextCommandBar.Font.Text = TextLayer.Font.Source;
+            TextCommandBar.ColorPicker.Color = TextLayer.TextColor;
             if (TextLayer.FontSize != null) TextCommandBar.FontSize.Value = TextLayer.FontSize.Value;
         }
     }
@@ -61,7 +64,8 @@ public class TextCommandButton : CommandButtonBase
 class Text : CommandButtonCommandBar
 {
     static readonly Thickness DefaultThickness = new(16, 0, 16, 0);
-    public Button CreateNewLayer;
+    public Button CreateNewLayer, ColorPickerButton;
+    public ColorPicker ColorPicker;
     public StackPanel LayerEditorControls;
     public TextBox TextBox;
     public AutoSuggestBox Font;
@@ -110,7 +114,29 @@ class Text : CommandButtonCommandBar
                     {
                         Margin = DefaultThickness,
                         Width = 100
-                    }.Assign(out FontSize)
+                    }.Assign(out FontSize),
+                    new Button
+                    {
+                        Width = 30,
+                        Height = 30,
+                        Margin = new Thickness(16, 0, 16, 0),
+                        Flyout = new Flyout
+                        {
+                            Content = new ColorPicker
+                            {
+                                IsAlphaEnabled = true
+                            }
+                            .Edit(x =>
+                            {
+                                x.ColorChanged += delegate
+                                {
+                                    if (ColorPickerButton != null)
+                                        ColorPickerButton.Background = new SolidColorBrush(x.Color);
+                                };
+                            })
+                        }
+                    }
+                    .Assign(out ColorPickerButton)
                 }
             }.Assign(out LayerEditorControls)
         );
