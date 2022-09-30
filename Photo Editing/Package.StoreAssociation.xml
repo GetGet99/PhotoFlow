@@ -361,11 +361,13 @@
     <Language Code="zu-za" InMinimumRequirementSet="true" />
   </SupportedLocales>
   <ProductReservedInfo>
-    <MainPackageIdentityName>3749Get.64306B5598F19</MainPackageIdentityName>
+    <MainPackageIdentityName>3749Get.GetsPhotoFlow</MainPackageIdentityName>
     <ReservedNames>
-      <ReservedName>Photo Flow</ReservedName>
+      <ReservedName>Get's PhotoFlow</ReservedName>
     </ReservedNames>
   </ProductReservedInfo>
-  <AccountPackageIdentityNames />
-  <PackageInfoList LandingUrl="https://developer.microsoft.com/dashboard/Application?appId=9NC1MFCTVD8H" />
+  <AccountPackageIdentityNames>
+    <MainPackageIdentityName>3749Get.380696AD8D378</MainPackageIdentityName>
+  </AccountPackageIdentityNames>
+  <PackageInfoList LandingUrl="https://developer.microsoft.com/dashboard/Application?appId=9P3WPMT3DZS6" />
 </StoreAssociation>

@@ -10,9 +10,9 @@
     <AppIconSource>D:\Arts\Art\Camera - Copy\PhotoFlow.ai</AppIconSource>
     <SplashScreenSource>D:\Arts\Art\Camera - Copy\PhotoFlow.ai</SplashScreenSource>
     <PackageLogoSource>D:\Arts\Art\Camera - Copy\PhotoFlow.ai</PackageLogoSource>
-    <AppxShowAllApps>True</AppxShowAllApps>
+    <AppxShowAllApps>False</AppxShowAllApps>
     <UapAppxPackageBuildMode>StoreAndSideload</UapAppxPackageBuildMode>
-    <AppxBuildConfigurationSelection>neutral|x86|x64|arm|arm64</AppxBuildConfigurationSelection>
+    <AppxBuildConfigurationSelection>x86|x64|arm|arm64</AppxBuildConfigurationSelection>
     <PackageOptionalProjectsInIdeBuilds>False</PackageOptionalProjectsInIdeBuilds>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|ARM'">

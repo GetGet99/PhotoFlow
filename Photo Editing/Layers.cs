@@ -540,6 +540,7 @@ namespace PhotoFlow.Layer
             get => (TextBlock.Foreground as SolidColorBrush ?? throw new InvalidCastException()).Color;
             set
             {
+                _TextColor = value;
                 if (TextBlock != null) TextBlock.Foreground = new SolidColorBrush(value);
             }
         }
@@ -579,13 +580,13 @@ namespace PhotoFlow.Layer
         protected override JObject OnDataSaving()
         {
             string Text = "", FontFamily = "";
-            double FontSize = default;
+            double? FontSize = default;
             Color TextColor = default;
             Extension.RunOnUIThread(() =>
             {
                 Text = this.Text;
                 FontFamily = Font.Source;
-                FontSize = this.FontSize.Value;
+                FontSize = this.FontSize;
                 TextColor = this.TextColor;
             });
             return new JObject(
@@ -593,7 +594,10 @@ namespace PhotoFlow.Layer
                 new JProperty("FontFamily", FontFamily),
                 new JProperty("FontSize", FontSize),
                 new JProperty("TextColor", new JObject(
-                    //Unfinished Region
+                    new JProperty("R", TextColor.R),
+                    new JProperty("G", TextColor.G),
+                    new JProperty("B", TextColor.B),
+                    new JProperty("A", TextColor.A)
                 ))
             );
         }
@@ -602,10 +606,18 @@ namespace PhotoFlow.Layer
         {
             Extension.RunOnUIThread(() =>
             {
-                Text = json["Text"]?.ToObject<string>();
-                var f = json["Font"]?.ToObject<string>();
+                Text = json["Text"]?.ToObject<string>() ?? "";
+                var f = json["FontFamily"]?.ToObject<string>();
                 if (f != null) Font = new FontFamily(f);
                 FontSize = json["FontSize"]?.ToObject<double>();
+                var TextColor = json["TextColor"];
+                if (TextColor is null) return;
+                var r = TextColor["R"]?.ToObject<byte>();
+                var g = TextColor["G"]?.ToObject<byte>();
+                var b = TextColor["B"]?.ToObject<byte>();
+                var a = TextColor["A"]?.ToObject<byte>();
+                if (r is null || g is null || b is null || a is null) return;
+                this.TextColor = Color.FromArgb(a.Value, r.Value, g.Value, b.Value);
             });
         }
     }

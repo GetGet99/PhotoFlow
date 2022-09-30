@@ -40,6 +40,11 @@ public class TextCommandButton : CommandButtonBase
             if (CurrentLayer is Layer.TextLayer Layer)
                 Layer.FontSize = TextCommandBar.FontSize.Value;
         };
+        TextCommandBar.ColorPicker.ColorChanged += delegate
+        {
+            if (CurrentLayer is Layer.TextLayer Layer)
+                Layer.TextColor = TextCommandBar.ColorPicker.Color;
+        };
         //TextCommandBar.Font.LostFocus += (_, _1) =>
         //{
         //    if (CurrentLayer is Layer.TextLayer Layer)
@@ -134,6 +139,7 @@ class Text : CommandButtonCommandBar
                                         ColorPickerButton.Background = new SolidColorBrush(x.Color);
                                 };
                             })
+                            .Assign(out ColorPicker)
                         }
                     }
                     .Assign(out ColorPickerButton)

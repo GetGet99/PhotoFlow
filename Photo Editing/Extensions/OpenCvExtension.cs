@@ -1,4 +1,5 @@
-﻿using CSharpUI;
+﻿#nullable enable
+using CSharpUI;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;
