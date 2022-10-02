@@ -10,7 +10,7 @@
   <Identity
     Name="3749Get.GetsPhotoFlow"
     Publisher="CN=95122495-0FC5-4CBE-B461-D28358AFE57A"
-    Version="1.0.9.0" />
+    Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="a7c8bf14-9d06-48ce-a48a-62a8988d06ec" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 

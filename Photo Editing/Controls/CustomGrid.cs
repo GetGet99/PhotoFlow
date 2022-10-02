@@ -8,18 +8,26 @@ using Windows.Foundation;
 namespace CustomGrid
 {
     public enum GridType : uint {
-        Auto,
-        Pixel,
-        Star
+        Auto = 1,
+        Pixel = 2,
+        Star = 3
     }
     public class CustomGrid : Panel
     {
         public static readonly DependencyProperty GridTypeProperty = DependencyProperty.Register(
             "GridType",
+#if DEBUG
             typeof(GridType),
+#else
+            typeof(string),
+#endif
             typeof(CustomGrid),
             new PropertyMetadata(
-                GridType.Star,
+#if DEBUG
+            GridType.Star,
+#else
+            GridType.Star.ToString(),
+#endif
                 new PropertyChangedCallback((obj, evargs) =>
                 {
                     var Parent = (obj as FrameworkElement)?.Parent as CustomGrid;
@@ -28,8 +36,17 @@ namespace CustomGrid
             )
             )
         );
+#if DEBUG
         public static void SetGridType(UIElement element, GridType value) => element.SetValue(GridTypeProperty, value);
         public static GridType GetGridType(UIElement element) => (GridType)element.GetValue(GridTypeProperty);
+        public static void RealSetGridType(UIElement element, GridType value) => element.SetValue(GridTypeProperty, value);
+        public static GridType RealGetGridType(UIElement element) => (GridType)element.GetValue(GridTypeProperty);
+#else
+        public static void SetGridType(UIElement element, string value) => element.SetValue(GridTypeProperty, value);
+        public static string GetGridType(UIElement element) => (string)element.GetValue(GridTypeProperty);
+        public static void RealSetGridType(UIElement element, GridType value) => element.SetValue(GridTypeProperty, value.ToString());
+        public static GridType RealGetGridType(UIElement element) => Enum.Parse<GridType>(element.GetValue(GridTypeProperty).ToString());
+#endif
         public static readonly DependencyProperty GridValueProperty = DependencyProperty.Register(
             "GridValue",
             typeof(double),
@@ -82,7 +99,7 @@ namespace CustomGrid
 
         protected override Size MeasureOverride(Size availableSize)
         {
-            IEnumerable<(UIElement Element, GridType GridType, double GridValue)> definition = Children.Select(Element => (Element, GetGridType(Element), GetGridValue(Element)));
+            IEnumerable<(UIElement Element, GridType GridType, double GridValue)> definition = Children.Select(Element => (Element, RealGetGridType(Element), GetGridValue(Element)));
             
             double TotalPixel = definition.Where(x => x.GridType == GridType.Pixel).Select(x =>
             {
@@ -117,7 +134,7 @@ namespace CustomGrid
 
         protected override Size ArrangeOverride(Size finalSize)
         {
-            IEnumerable<(UIElement Element, GridType GridType, double GridValue)> definition = Children.Select(Element => (Element, GetGridType(Element), GetGridValue(Element)));
+            IEnumerable<(UIElement Element, GridType GridType, double GridValue)> definition = Children.Select(Element => (Element, RealGetGridType(Element), GetGridValue(Element)));
 
             double TotalPixel = definition.Where(x => x.GridType == GridType.Pixel).Select(x =>
             {
@@ -170,7 +187,7 @@ namespace CustomGrid
         }
         public ColumnGrid AddChild(GridType GridType, double GridValue, UIElement Element)
         {
-            SetGridType(Element, GridType);
+            RealSetGridType(Element, GridType);
             SetGridValue(Element, GridValue);
             Children.Add(Element);
             return this;
@@ -201,7 +218,7 @@ namespace CustomGrid
 
         protected override Size MeasureOverride(Size availableSize)
         {
-            IEnumerable<(UIElement Element, GridType GridType, double GridValue)> definition = Children.Select(Element => (Element, GetGridType(Element), GetGridValue(Element)));
+            IEnumerable<(UIElement Element, GridType GridType, double GridValue)> definition = Children.Select(Element => (Element, RealGetGridType(Element), GetGridValue(Element)));
 
             double TotalPixel = definition.Where(x => x.GridType == GridType.Pixel).Select(x =>
             {
@@ -238,7 +255,7 @@ namespace CustomGrid
 
         protected virtual Size Arranging(IEnumerable<UIElement> Children, Size finalSize)
         {
-            IEnumerable<(UIElement Element, GridType GridType, double GridValue)> definition = Children.Select(Element => (Element, GetGridType(Element), GetGridValue(Element)));
+            IEnumerable<(UIElement Element, GridType GridType, double GridValue)> definition = Children.Select(Element => (Element, RealGetGridType(Element), GetGridValue(Element)));
 
             double TotalPixel = definition.Where(x => x.GridType == GridType.Pixel).Select(x =>
             {

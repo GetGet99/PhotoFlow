@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using CSharpUI;
 using System;
 using System.Threading.Tasks;
 using Windows.UI;
@@ -15,13 +16,13 @@ public sealed partial class MainPage : Page
     public MainPage()
     {
         SetValue(Microsoft.UI.Xaml.Controls.BackdropMaterial.ApplyToRootOrPageBackgroundProperty, true);
-         RotateCommand = new(x =>
-         {
-             LayerContaineCompositeTransformr.CenterX = LayerContainerBackground.ActualWidth / 2;
-             LayerContaineCompositeTransformr.CenterY = LayerContainerBackground.ActualHeight / 2;
-             LayerContaineCompositeTransformr.Rotation = Convert.ToDouble((string)x);
-             UpdateLayerContainerSizeAndRotation();
-         });
+        RotateCommand = new(x =>
+        {
+            LayerContaineCompositeTransformr.CenterX = LayerContainerBackground.ActualWidth / 2;
+            LayerContaineCompositeTransformr.CenterY = LayerContainerBackground.ActualHeight / 2;
+            LayerContaineCompositeTransformr.Rotation = Convert.ToDouble((string)x);
+            UpdateLayerContainerSizeAndRotation();
+        });
         InitializeComponent();
         SetUpTitleBar();
         InitializeCommandButtons();
@@ -46,8 +47,8 @@ public sealed partial class MainPage : Page
 
         };
     }
-    
-    
+
+
 
     private void Invert(object _, RoutedEventArgs _1)
     {
@@ -87,6 +88,6 @@ public sealed partial class MainPage : Page
         //appWindowContentFrame
     }
 
-    
+
 }
 
