@@ -19,6 +19,7 @@
     <TextBlock Text="Rotation:" Margin="10, 0, 10, 0" VerticalAlignment="Center" />
     <muxc:NumberBox x:Name="TB_R" x:FieldModifier="Public" PlaceholderText="Rotation" Width="100" VerticalAlignment="Center" />
     <ToggleButton x:Name="EnableMove" CornerRadius="5" x:FieldModifier="Public" Content="Move via Pointer" Margin="10, 0, 10, 0" IsChecked="True" />
-    <ToggleButton x:Name="EnableResize" x:FieldModifier="Public" Content="Resize Gesture" Margin="10, 0, 10, 0" IsChecked="False" />
+    <ToggleButton x:Name="EnableScale" x:FieldModifier="Public" Content="Scale Gesture" Margin="10, 0, 10, 0" IsChecked="False" />
     <ToggleButton x:Name="EnableRotate" x:FieldModifier="Public" Content="Rotate Gesture" Margin="10, 0, 10, 0" IsChecked="False" />
+    <ToggleButton x:Name="EnableResize" x:FieldModifier="Public" Content="Resize Gesture" Margin="10, 0, 10, 0" IsChecked="False" />
 </local:CommandButtonCommandBar>

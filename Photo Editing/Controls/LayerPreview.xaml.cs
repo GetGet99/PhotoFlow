@@ -19,16 +19,19 @@ namespace PhotoFlow
 {
     public sealed partial class LayerPreview : IDisposable
     {
+        readonly Symbol Eye = (Symbol)0xe7b3;
         private readonly Layer.Layer Layer;
         public LayerPreview(Layer.Layer YourLayer)
         {
+            Layer = YourLayer;
             InitializeComponent();
+            VisibleButton.IsChecked = YourLayer.Visible;
             Image.Source = null;
 
-            Layer = YourLayer;
             if (YourLayer is Layer.MatLayer)
                 SendToPhotoToys.Visibility = Visibility.Visible;
-            ButtonOverlay.Click += (o, e) => Layer.SelectionIndexUpdateTarget.Value = Layer.Index;
+            ButtonOverlay.Click += (o, e) => Layer.SelectionIndexUpdateTarget.Value =
+                Layer.SelectionIndexUpdateTarget.Value == Layer.Index ? -1 : Layer.Index;
         }
         public string LayerName { get => LayerNameTextBlock.Text; set => LayerNameTextBlock.Text = value; }
         public ImageSource PreviewImage { get => Image.Source; set => Image.Source = value; }
@@ -101,6 +104,17 @@ namespace PhotoFlow
             {
                 await matLayer.Mat.ImShow("Send To PhotoToys (Drag And Drop The Image)", XamlRoot);
             }
+        }
+
+        private void ShowLayer(object sender, RoutedEventArgs e)
+        {
+            Layer.Visible = true;
+            RightClickCommand.Hide();
+        }
+        private void HideLayer(object sender, RoutedEventArgs e)
+        {
+            Layer.Visible = false;
+            RightClickCommand.Hide();
         }
     }
 }

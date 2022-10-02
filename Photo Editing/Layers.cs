@@ -13,6 +13,16 @@ using System.IO;
 using Newtonsoft.Json.Linq;
 using Windows.UI.Xaml.Shapes;
 using Windows.ApplicationModel.DataTransfer;
+using System.Collections;
+using System.Collections.Generic;
+using Windows.UI.Xaml.Input;
+using Window = Windows.UI.Xaml.Window;
+using System.Linq;
+using System.Diagnostics;
+using CSUI;
+using Windows.UI.ViewManagement;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace PhotoFlow.Layer
 {
@@ -36,22 +46,68 @@ namespace PhotoFlow.Layer
 
     }
 
-    public abstract class Layer : ISaveable, ILayerTyping, IDisposable
+    public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPropertyChanged
     {
+        protected static readonly UISettings UISettings = new();
         public Grid LayerUIElement { get; private set; }
-        static readonly Brush BorderColor = new SolidColorBrush(Colors.Red);
+        static Layer()
+        {
+            static void UpdateBorderColor()
+            {
+                if (UISettings.GetColorValue(UIColorType.Background).R < 255 / 2)
+                {
+                    // Dark Mode
+                    BorderColor.Color = UISettings.GetColorValue(UIColorType.AccentLight2);
+                } else
+                {
+                    // Light Mode
+                    BorderColor.Color = UISettings.GetColorValue(UIColorType.AccentDark2);
+                }
+            }
+            UpdateBorderColor();
+            UISettings.ColorValuesChanged += delegate
+            {
+                UpdateBorderColor();
+            };
+        }
+        protected static readonly SolidColorBrush BorderColor = new();
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public abstract Types LayerType { get; }
         public VariableUpdateAlert<string> LayerName { get; } = new VariableUpdateAlert<string>() { Value = "Unnamed Layer" };
+        private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+        public bool Visible
+        {
+            get => LayerUIElement.Visibility == Visibility.Visible;
+            set
+            {
+                LayerUIElement.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+                NotifyPropertyChanged();
+            }
+        }
         public double CenterX
         {
             get => RenderTransform.CenterX;
-            set => RenderTransform.CenterX = value;
+            set {
+                RenderTransform.CenterX = value;
+                NotifyPropertyChanged();
+            }
         }
         public double CenterY
         {
             get => RenderTransform.CenterY;
-            set => RenderTransform.CenterY = value;
+            set
+            {
+                RenderTransform.CenterY = value;
+                NotifyPropertyChanged();
+            }
         }
         public CompositeTransform RenderTransform => (CompositeTransform)LayerUIElement.RenderTransform;
         public double X
@@ -110,6 +166,7 @@ namespace PhotoFlow.Layer
                 Rotation = 0,
                 ScaleX = 0, ScaleY = 0,
                 CenterX = 0, CenterY = 0;
+            bool Visible = true;
             Extension.RunOnUIThread(delegate
             {
                 X = this.X;
@@ -121,6 +178,7 @@ namespace PhotoFlow.Layer
                 ScaleY = this.ScaleY;
                 CenterX = this.CenterX;
                 CenterY = this.CenterY;
+                Visible = this.Visible;
             });
             return new JObject(
                 new JProperty("LayerName", LayerName.Value),
@@ -132,6 +190,7 @@ namespace PhotoFlow.Layer
                 new JProperty("Height", Height),
                 new JProperty("Rotation", Rotation),
                 new JProperty("Scale", new double[] { ScaleX, ScaleY }),
+                new JProperty("Visible", Visible),
                 new JProperty("AdditionalData", save)
             );
         }
@@ -147,6 +206,7 @@ namespace PhotoFlow.Layer
             var Rotation = json["Rotation"]?.ToObject<double>();
             var Width = json["Width"]?.ToObject<double>();
             var Height = json["Height"]?.ToObject<double>();
+            var Visible = json["Visible"]?.ToObject<bool>();
 
             var Task = Extension.RunOnUIThreadAsync(() =>
             {
@@ -165,6 +225,7 @@ namespace PhotoFlow.Layer
                 }
                 if (Width != null) this.Width = Width.Value;
                 if (Height != null) this.Height = Height.Value;
+                if (Visible != null) this.Visible = Visible.Value;
             });
 
             var additionalData = json["AdditionalData"]?.ToObject<JObject>();
@@ -189,7 +250,7 @@ namespace PhotoFlow.Layer
         public Control Control { get; private set; }
 
         public LayerPreview LayerPreview { get; private set; }
-        protected LayerContainer LayerContainer => (LayerUIElement.Parent != null && LayerUIElement.Parent.GetType() == typeof(LayerContainer)) ? (LayerContainer)LayerUIElement.Parent : null;
+        protected LayerContainer? LayerContainer => (LayerUIElement.Parent is LayerContainer L) ? L : null;
 
         public VariableUpdateAlert<bool> Selecting { get; } = new VariableUpdateAlert<bool>() { Value = false };
 
@@ -203,14 +264,15 @@ namespace PhotoFlow.Layer
         {
             Extension.RunOnUIThread(() =>
             {
-                LayerPreview = new LayerPreview(this);
                 LayerUIElement = new Grid
                 {
                     BorderThickness = new Thickness(2),
                     CanBeScrollAnchor = false,
                     IsHitTestVisible = false,
-                    RenderTransform = new CompositeTransform()
+                    RenderTransform = new CompositeTransform(),
+                    Background = new SolidColorBrush(Colors.Transparent)
                 };
+                LayerPreview = new LayerPreview(this);
             });
             LayerName.Update += (oldVal, newVal) =>
             {
@@ -304,10 +366,15 @@ namespace PhotoFlow.Layer
             }
             Clipboard.HistoryChanged += HistoryChanged;
         }
-        public Task CopyAsync() => CopyAsync(DataPackageOperation.Copy);
+        public async Task CopyAsync()
+        {
+            if (RequestCopy()) return;
+            await CopyAsync(DataPackageOperation.Copy);
+        }
         public async void CopyNoWait() => await CopyAsync();
         public async Task CutAsync()
         {
+            if (RequestCut()) return;
             await CopyAsync(DataPackageOperation.Move);
             DeleteSelf();
         }
@@ -327,7 +394,11 @@ namespace PhotoFlow.Layer
             layer.EnablePreviewEffects();
             return Toreturn;
         }
-
+        protected virtual bool RequestCut() => false;
+        protected virtual bool RequestCopy() => false;
+        public virtual bool RequestPaste() => false;
+        public virtual bool RequestDuplicate() => false;
+        public virtual bool RequestDelete() => false;
 
         public abstract void Dispose();
     }
@@ -368,8 +439,12 @@ namespace PhotoFlow.Layer
             var height = m.Height;
             Extension.RunOnUIThread(() =>
             {
-
-                Image = new Image();
+                Image = new Image
+                {
+                    Stretch = Stretch.Fill,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Stretch
+                };
                 UpdateImage();
                 LayerUIElement.Children.Add(Image);
                 Width = width;
@@ -408,11 +483,32 @@ namespace PhotoFlow.Layer
     }
     public class InkingLayer : Layer
     {
-
         public override Types LayerType { get; } = Types.Inking;
-        public readonly VariableUpdateAlert<bool> TouchAllowed = new ();
-        public readonly VariableUpdateAlert<bool> DrawingAllowed = new ();
-        public InkCanvas InkCanvas { get; private set; }
+        public readonly VariableUpdateAlert<bool> TouchAllowed = new();
+        public readonly VariableUpdateAlert<bool> DrawingAllowed = new();
+        static readonly SolidColorBrush SelectionColor = BorderColor;
+        readonly Canvas Canvas = new()
+        {
+            //IsHitTestVisible = false
+        };
+        readonly Polygon SelectionPolygon = new()
+        {
+            Stroke = SelectionColor,
+            StrokeThickness = 1,
+            StrokeDashArray = new DoubleCollection() { 5, 2 },
+            IsHitTestVisible = false
+        };
+        readonly Rectangle SelectionRectangle = new()
+        {
+            Visibility = Visibility.Collapsed,
+            StrokeThickness = 1,
+            StrokeDashArray = new DoubleCollection() { 5, 2 },
+            Fill = new SolidColorBrush(Colors.Transparent),
+            ManipulationMode = ManipulationModes.TranslateX | ManipulationModes.TranslateY,
+            IsHitTestVisible = true
+        };
+        CompositeTransform SelectionRenderTransform = new CompositeTransform();
+        public InkCanvas? InkCanvas { get; private set; }
         public InkingLayer(Rect Where)
         {
             OnCreate();
@@ -428,12 +524,14 @@ namespace PhotoFlow.Layer
             LoadData(json);
             CompleteCreate();
         }
+        Windows.Foundation.Point LatestMouse = new();
         protected override void OnCreate()
         {
             TouchAllowed.Update += (oldValue, newValue) => UpdateInkingDeviceOnUIThread();
             DrawingAllowed.Update += (oldValue, newValue) => UpdateInkingDeviceOnUIThread();
             Extension.RunOnUIThread(() =>
             {
+
                 InkCanvas = new InkCanvas()
                 {
                     HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -441,13 +539,139 @@ namespace PhotoFlow.Layer
                     CanBeScrollAnchor = false
                 };
                 LayerUIElement.Children.Add(InkCanvas);
+                Canvas.Children.Add(SelectionPolygon);
+                Canvas.Children.Add(SelectionRectangle);
+                LayerUIElement.Children.Add(Canvas);
+                //LayerUIElement.Children.Add(SelectionRectangle);
 
-                InkCanvas.InkPresenter.StrokesCollected += (o, e) => UpdatePreview();
-                InkCanvas.InkPresenter.StrokesErased += (o, e) => UpdatePreview();
+                InkCanvas.InkPresenter.StrokesCollected += (o, e) => { ClearInkSlection(); UpdatePreview(); };
+                InkCanvas.InkPresenter.StrokesErased += (o, e) => { ClearInkSlection(); UpdatePreview(); };
+                InkCanvas.PointerMoved += (_, e) => LatestMouse = e.GetCurrentPoint(InkCanvas).Position;
+                SelectionRectangle.RenderTransform = SelectionRenderTransform;
+                SelectionRectangle.Stroke = SelectionColor;
+                //SelectionRectangle.PointerEntered += delegate
+                //{
+                //    //Debugger.Break();
+                //};
+                //SelectionRectangle.PointerPressed += delegate
+                //{
+                //    Debugger.Break();
+                //};
+                //SelectionRectangle.PointerExited += delegate
+                //{
+                //    Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.Arrow, 1);
+                //};
+                SelectionRectangle.ManipulationStarted += (_, e) => e.Handled = true;
+                SelectionRectangle.ManipulationDelta += (_, e) =>
+                {
+                    e.Handled = true;
+                    float ZoomFactor = LayerContainer?.ZoomFactor ?? 1;
+                    Windows.Foundation.Point d = e.Delta.Translation;
+                    double TwoPiOver360 = 2 * Math.PI / 360;
+                    var sin = Math.Sin(Rotation * TwoPiOver360);
+                    var cos = Math.Cos(Rotation * TwoPiOver360);
+                    d = new Windows.Foundation.Point(
+                        d.X * cos + d.Y * sin,
+                        d.X * sin + d.Y * cos
+                    );
+                    d.X /= ZoomFactor;
+                    d.Y /= ZoomFactor;
+
+                    var SelectionBounds = this.SelectionBounds;
+                    Windows.Foundation.Point newPos = new(SelectionBounds.X + d.X, SelectionBounds.Y + d.Y);
+
+                    var newBounds = new Windows.Foundation.Rect(newPos,
+                        new Windows.Foundation.Size(SelectionBounds.Width, SelectionBounds.Height));
+                    InkCanvas.InkPresenter.StrokeContainer.MoveSelected(d);
+                    UpdateInkSelectionRectangle(newBounds);
+                };
+                CommandBarFlyout? C = null;
+                InkCanvas.InkPresenter.InputProcessingConfiguration.RightDragAction = InkInputRightDragAction.LeaveUnprocessed;
+                InkCanvas.InkPresenter.UnprocessedInput.PointerPressed += (_, e) =>
+                {
+                    if (e.CurrentPoint.Properties.IsRightButtonPressed)
+                    {
+                        if (CanPasteInk)
+                            new MenuFlyout
+                            {
+                                Items =
+                                {
+                                    new MenuFlyoutItem
+                                    {
+                                        Text = "Paste",
+                                        Icon = new SymbolIcon(Symbol.Paste),
+                                        Command = new LambdaCommand(() => PasteInkAt(e.CurrentPoint.Position))
+                                    }
+                                }
+                            }.ShowAt(InkCanvas, e.CurrentPoint.Position);
+                    }
+                };
+                SelectionRectangle.ContextFlyout = C = new CommandBarFlyout
+                {
+                    PrimaryCommands =
+                    {
+                        new AppBarButton
+                        {
+                            Label = "Cut",
+                            Icon = new SymbolIcon(Symbol.Cut),
+                            Command = new LambdaCommand(() => {
+                                RequestCut();
+                                C?.Hide();
+                            })
+                        },
+                        new AppBarButton
+                        {
+                            Label = "Copy",
+                            Icon = new SymbolIcon(Symbol.Copy),
+                            Command = new LambdaCommand(() => {
+                                RequestCopy();
+                                C?.Hide();
+                            })
+                        },
+                        new AppBarButton
+                        {
+                            Label = "Duplicate",
+                            Icon = new SymbolIcon(Symbol.Copy),
+                            Command = new LambdaCommand(() => {
+                                RequestDuplicate();
+                                C?.Hide();
+                            })
+                        },
+                        new AppBarButton
+                        {
+                            Label = "Delete",
+                            Icon = new SymbolIcon(Symbol.Delete),
+                            Command = new LambdaCommand(() =>
+                            {
+                                RequestDelete();
+                                C?.Hide();
+                            })
+                        }
+                    }
+                };
+
+                LayerUIElement.SizeChanged += delegate
+                {
+                    Canvas.Width = Width;
+                    Canvas.Height = Height;
+                };
+                Canvas.Width = Width;
+                Canvas.Height = Height;
+
+                SelectionRectangle.RenderTransform = SelectionRenderTransform;
+                SelectionRectangle.PointerEntered += delegate
+                {
+                    Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.SizeAll, 1);
+                };
+                SelectionRectangle.PointerEntered += delegate
+                {
+                    Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.Arrow, 1);
+                };
             });
         }
         protected override void Deselect()
         {
+            ClearInkSlection();
             UpdateInkingDeviceOnUIThread();
             base.Deselect();
         }
@@ -455,6 +679,101 @@ namespace PhotoFlow.Layer
         {
             UpdateInkingDeviceOnUIThread();
             base.Select();
+        }
+        public void SelectionPreviewClear()
+        {
+            SelectionPolygon.Points.Clear();
+        }
+        public void SelectionPreviewAdd(Windows.Foundation.Point pt)
+        {
+            SelectionPolygon.Points.Add(pt);
+        }
+        public void SelectInkWithPolyline(IEnumerable<Windows.Foundation.Point> Polyline)
+        {
+            UpdateInkSelectionRectangle(InkCanvas.InkPresenter.StrokeContainer.SelectWithPolyLine(Polyline));
+        }
+        
+        public Windows.Foundation.Rect SelectionBounds { get; private set; }
+        public void UpdateInkSelectionRectangle(Windows.Foundation.Rect Bounds)
+        {
+            SelectionBounds = Bounds;
+            if (Bounds.Width is 0 && Bounds.Height is 0)
+            {
+                SelectionRectangle.Visibility = Visibility.Collapsed;
+                return;
+            }
+            else
+            {
+                SelectionRectangle.Visibility = Visibility.Visible;
+                SelectionColor.Color =
+                    SelectionRectangle.ActualTheme == ElementTheme.Dark ? UISettings.GetColorValue(UIColorType.AccentLight2)
+                    : UISettings.GetColorValue(UIColorType.AccentDark2);
+                SelectionRenderTransform.TranslateX = Bounds.X; //-(Width - Bounds.Width) / 2 + Bounds.X;
+                SelectionRenderTransform.TranslateY = Bounds.Y; //-(Height - Bounds.Height) / 2 + Bounds.Y;
+                SelectionRectangle.Width = Bounds.Width;
+                SelectionRectangle.Height = Bounds.Height;
+
+            }
+        }
+        public void ClearInkSlection()
+        {
+            foreach (var s in InkCanvas.InkPresenter.StrokeContainer.GetStrokes())
+                s.Selected = false;
+            UpdateInkSelectionRectangle(default);
+        }
+        protected override bool RequestCut()
+        {
+            if (RequestCopy())
+            {
+                InkCanvas?.InkPresenter.StrokeContainer.DeleteSelected();
+                UpdateInkSelectionRectangle(default);
+                return true;
+            }
+            return false;
+        }
+        protected override bool RequestCopy()
+        {
+            if (SelectionBounds.Width == 0) return false;
+            if (InkCanvas is null) return false;
+            InkCanvas.InkPresenter.StrokeContainer.CopySelectedToClipboard();
+            return true;
+        }
+        public bool CanPasteInk => InkCanvas?.InkPresenter.StrokeContainer.CanPasteFromClipboard() ?? false;
+        public override bool RequestPaste()
+        {
+            if (InkCanvas is null) return false;
+            if (!CanPasteInk)
+                return false;
+            PasteInkAt(LatestMouse);
+            return true;
+        }
+        public void PasteInkAt(Windows.Foundation.Point pt)
+        {
+            InkCanvas?.InkPresenter.StrokeContainer.PasteFromClipboard(pt);
+        }
+        public override bool RequestDuplicate()
+        {
+            if (SelectionBounds.Width == 0) return false;
+            if (InkCanvas is null) return false;
+            InkCanvas.InkPresenter.StrokeContainer.AddStrokes(
+                (from x in InkCanvas.InkPresenter.StrokeContainer.GetStrokes()
+                 where x.Selected
+                 select x.Clone()).ToArray()
+            );
+            return true;
+        }
+        public override bool RequestDelete()
+        {
+            if (SelectionBounds.Width == 0) return false;
+            if (InkCanvas is null) return false;
+            InkCanvas.InkPresenter.StrokeContainer.DeleteSelected();
+            UpdateInkSelectionRectangle(default);
+            return true;
+        }
+        public override void DisablePreviewEffects()
+        {
+            ClearInkSlection();
+            base.DisablePreviewEffects();
         }
         void UpdateInkingDeviceOnUIThread() => Extension.RunOnUIThread(() => UpdateInkingDevice());
         [RunOnUIThread]
@@ -470,16 +789,16 @@ namespace PhotoFlow.Layer
             {
                 InputTypes = CoreInputDeviceTypes.None;
             }
-            InkCanvas.InkPresenter.InputDeviceTypes = InputTypes;
+            InkCanvas!.InkPresenter.InputDeviceTypes = InputTypes;
         }
-        public override void Dispose() => Extension.RunOnUIThread(() => InkCanvas.InkPresenter.StrokeContainer.Clear());
+        public override void Dispose() => Extension.RunOnUIThread(() => InkCanvas!.InkPresenter.StrokeContainer.Clear());
         protected override JObject OnDataSaving()
         {
             async Task<JObject> func()
             {
                 var ms = new InMemoryRandomAccessStream();
                 await Extension.RunOnUIThreadAsync(async () =>
-                    await InkCanvas.InkPresenter.StrokeContainer.SaveAsync(ms, InkPersistenceFormat.Isf)
+                    await InkCanvas!.InkPresenter.StrokeContainer.SaveAsync(ms, InkPersistenceFormat.Isf)
                 );
 
                 byte[] bytes = new byte[ms.Size];

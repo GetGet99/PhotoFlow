@@ -35,7 +35,12 @@
                 <AppBarButton Label="Cut" Icon="Cut" Click="Cut" AccessKey="C"/>
                 <AppBarButton Label="Copy" Icon="Copy" Click="Copy" AccessKey="C"/>
                 <AppBarButton Label="Delete" Icon="Delete" Click="Delete" AccessKey="Delete"/>
-				<AppBarButton Label="Properties" Icon="Important" Click="Properties" AccessKey="P"/>
+                <AppBarButton Label="Properties" Icon="Important" Click="Properties" AccessKey="P"/>
+                <AppBarToggleButton x:Name="VisibleButton"  CornerRadius="4" Label="Toggle Hide/Show" Checked="ShowLayer" Unchecked="HideLayer" IsChecked="{x:Bind Layer.Visible, Mode=TwoWay}">
+                    <AppBarToggleButton.Icon>
+                        <SymbolIcon Symbol="{x:Bind Eye}"></SymbolIcon>
+                    </AppBarToggleButton.Icon>
+                </AppBarToggleButton>
                 <CommandBarFlyout.SecondaryCommands>
                     <AppBarButton Label="Duplicate" Icon="Copy" Click="Duplicate" AccessKey="D"/>
                     <AppBarButton Label="Rename" Icon="Rename" Click="Rename" AccessKey="R"/>

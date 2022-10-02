@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using PhotoFlow.Layer;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,6 +10,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.UI;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -23,6 +25,12 @@ namespace PhotoFlow
 {
     public sealed partial class LayerContainer : Panel
     {
+        public void SetScrollViewer(ScrollViewer ScrollViewer)
+        {
+            this.ScrollViewer = ScrollViewer;
+        }
+        ScrollViewer ScrollViewer;
+        public float ZoomFactor => ScrollViewer.ZoomFactor;
         public List<Features.IFeatureUndoRedoable> History { get; } = new List<Features.IFeatureUndoRedoable>();
         public ObservableCollection<Layer.Layer> Layers { get; } = new ObservableCollection<Layer.Layer>();
         public delegate void SelectionUpdateHandler(int OldIndex, int NewINdex);

@@ -6,11 +6,21 @@ using System;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml;
+using Windows.UI.Input.Inking;
+using Windows.UI.Core;
+using Windows.UI.Xaml.Shapes;
+using System.Collections.Generic;
+using Windows.UI.Xaml.Media;
+using Windows.UI;
+using Windows.UI.ViewManagement;
+using Window = Windows.UI.Xaml.Window;
+
 namespace PhotoFlow;
 
 
 public class InkingCommandButton : CommandButtonBase
 {
+    static readonly UISettings UISettings = new();
     private readonly Inking InkingCommandBar = new();
     protected override CommandButtonCommandBar CommandBar => InkingCommandBar;
 
@@ -34,6 +44,8 @@ public class InkingCommandButton : CommandButtonBase
                 if (InkingCommandBar.TouchDraw.IsChecked != null)
                     InkLayer.TouchAllowed.Value = InkingCommandBar.TouchDraw.IsChecked.Value;
         };
+        
+        
     }
     void RotateRuler(double degree)
     {
@@ -76,6 +88,9 @@ public class InkingCommandButton : CommandButtonBase
             InkLayer.DrawingAllowed.Value = true;
             InkingCommandBar.InkControl.TargetInkCanvas = InkLayer.InkCanvas;
             InkingCommandBar.PropertiesButton.Layer = Layer;
+            InkLayer.InkCanvas!.InkPresenter.UnprocessedInput.PointerPressed += UnprocessedPressed;
+            InkLayer.InkCanvas!.InkPresenter.UnprocessedInput.PointerMoved += UnprocessedMove;
+            InkLayer.InkCanvas!.InkPresenter.UnprocessedInput.PointerReleased += UnprocessedReleased;
         }
     }
     protected override void RequestRemoveLayerEvent(Layer.Layer Layer)
@@ -83,9 +98,53 @@ public class InkingCommandButton : CommandButtonBase
         base.RequestRemoveLayerEvent(Layer);
         if (Layer != null && Layer.LayerType == PhotoFlow.Layer.Types.Inking)
         {
-            ((Layer.InkingLayer)Layer).DrawingAllowed.Value = false;
+            var InkLayer = (Layer.InkingLayer)Layer;
+            InkLayer.DrawingAllowed.Value = false;
+            InkLayer.InkCanvas!.InkPresenter.UnprocessedInput.PointerPressed -= UnprocessedPressed;
+            InkLayer.InkCanvas!.InkPresenter.UnprocessedInput.PointerMoved -= UnprocessedMove;
+            InkLayer.InkCanvas!.InkPresenter.UnprocessedInput.PointerReleased -= UnprocessedReleased;
         }
         InkingCommandBar.PropertiesButton.Layer = null;
+    }
+    List<Windows.Foundation.Point> Lasso = new();
+    void UnprocessedPressed(InkUnprocessedInput o, PointerEventArgs ev)
+    {
+        if (InkingCommandBar.LassoTool.IsChecked ?? false)
+        {
+            Lasso.Clear();
+            var pos = ev.CurrentPoint.Position;
+            Lasso.Add(pos);
+            if (InkLayer is not null)
+            {
+                InkLayer.ClearInkSlection();
+                InkLayer.SelectionPreviewClear();
+                InkLayer.SelectionPreviewAdd(pos);
+            }
+        }
+    }
+    void UnprocessedMove(InkUnprocessedInput o, PointerEventArgs ev)
+    {
+        if (!ev.CurrentPoint.IsInContact) return;
+        if (InkingCommandBar.LassoTool.IsChecked ?? false)
+        {
+            var pos = ev.CurrentPoint.Position;
+            Lasso.Add(pos);
+            if (InkLayer is not null)
+            {
+                InkLayer.SelectionPreviewAdd(pos);
+            }
+        }
+    }
+    void UnprocessedReleased(InkUnprocessedInput o, PointerEventArgs ev)
+    {
+        if (InkingCommandBar.LassoTool.IsChecked ?? false)
+        {
+            if (InkLayer is not null)
+            {
+                InkLayer.SelectionPreviewClear();
+                InkLayer.SelectInkWithPolyline(Lasso);
+            }
+        }
     }
     class Inking : CommandButtonCommandBar
     {
@@ -104,6 +163,7 @@ public class InkingCommandButton : CommandButtonBase
         public readonly Button CreateNewLayer;
         public readonly ToggleButton TouchDraw;
         public readonly InkToolbar InkControl;
+        public readonly InkToolbarCustomToolButton LassoTool;
         public readonly PropertiesButton PropertiesButton;
         public InkToolbarStencilButton StencilButton;
         public Inking()
@@ -113,34 +173,40 @@ public class InkingCommandButton : CommandButtonBase
                 Content = "Create New Inking Layer",
                 Margin = DefaultMargin
             });
-            Children.Add(new ToggleButton
+            Children.Add(TouchDraw = new ToggleButton
             {
                 Content = "Touch Drawing",
                 Margin = DefaultMargin
-            }.Assign(out TouchDraw));
-            Children.Add(new InkToolbar
+            });
+            var TransparentBrush = new SolidColorBrush(Colors.Transparent);
+            Children.Add(InkControl = new InkToolbar
             {
                 Margin = DefaultMargin,
                 VerticalAlignment = VerticalAlignment.Center,
-                Height = 100
-            }
-            .Edit(x => {
-                x.Children.Add(new InkToolbarBallpointPenButton { VerticalAlignment = VerticalAlignment.Center });
-                x.Children.Add(new InkToolbarPencilButton());
-                x.Children.Add(new InkToolbarHighlighterButton());
-                x.Children.Add(new InkToolbarEraserButton());
-                x.Children.Add(StencilButton = new InkToolbarStencilButton());
-            })
-            .Assign(out InkControl));
+                Height = 100,
+                Children =
+                {
+                    new InkToolbarBallpointPenButton { VerticalAlignment = VerticalAlignment.Center },
+                    new InkToolbarPencilButton(),
+                    new InkToolbarHighlighterButton(),
+                    (LassoTool = new InkToolbarCustomToolButton
+                    {
+                        Content = new SymbolIcon((Symbol)0xF408),
+                        Background = TransparentBrush
+                    }.Edit(x => {
+                        RoutedEventHandler r = (_, _1) => x.Background = x.IsChecked ?? false ? (Brush)App.Current.Resources["CardBackgroundFillColorDefaultBrush"] : TransparentBrush;
+                        x.Checked += r;
+                        x.Unchecked += r;
+                    })),
+                    new InkToolbarEraserButton(),
+                    new InkToolbarStencilButton().Assign(out StencilButton)
+                }
+            });
 
             Children.Add(PropertiesButton = new PropertiesButton
             {
                 Margin = new Thickness(0, 0, 10, 0)
             }.Edit(x => LayerChanged += () => x.Layer = Layer));
-
-            if (StencilButton == null)
-                // just to make nuablle check happy
-                throw new NullReferenceException();
         }
     }
 }

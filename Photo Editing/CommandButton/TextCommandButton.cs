@@ -6,6 +6,7 @@ using Windows.UI.Xaml;
 using CSharpUI;
 using ColorPicker = Microsoft.UI.Xaml.Controls.ColorPicker;
 using Windows.UI.Xaml.Media;
+using System.Linq;
 
 namespace PhotoFlow;
 
@@ -32,7 +33,7 @@ public class TextCommandButton : CommandButtonBase
             if (e.Reason == AutoSuggestionBoxTextChangeReason.SuggestionChosen)
             {
                 if (CurrentLayer is Layer.TextLayer Layer)
-                    Layer.Font = new Windows.UI.Xaml.Media.FontFamily(TextCommandBar.Font.Text);
+                    Layer.Font = new FontFamily(TextCommandBar.Font.Text);
             }
         };
         TextCommandBar.FontSize.ValueChanged += (_, e) =>
@@ -146,7 +147,15 @@ class Text : CommandButtonCommandBar
                 }
             }.Assign(out LayerEditorControls)
         );
-        Font.ItemsSource = Microsoft.Graphics.Canvas.Text.CanvasTextFormat.GetSystemFontFamilies();
+        var original = Microsoft.Graphics.Canvas.Text.CanvasTextFormat.GetSystemFontFamilies();
+        Font.ItemsSource = original;
+        Font.TextChanged += (_, e) =>
+        {
+            if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+            {
+                Font.ItemsSource = from x in original where x.ToLower().Contains(Font.Text.ToLower()) select x;
+            }
+        };
 
     }
 }

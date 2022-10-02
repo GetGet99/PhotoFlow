@@ -47,7 +47,7 @@ namespace PhotoFlow
             if (rtb == null) return null;
 
             var pixels = (await rtb.GetPixelsAsync()).ToArray();
-
+            
             var ms = new InMemoryRandomAccessStream();
             var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, ms);
 

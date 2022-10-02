@@ -105,6 +105,38 @@
                     <muxc:MenuBarItem Title="Image" Margin="0" CornerRadius="10">
                         <MenuFlyoutItem Text="Invert" Click="Invert"/>
                     </muxc:MenuBarItem>
+                    <muxc:MenuBarItem Title="View" Margin="0" CornerRadius="10">
+                        <MenuFlyoutItem Text="Reset Zoom" Click="ResetZoom">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="Number0" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Zoom In" Click="ZoomIn">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="Add" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Zoom Out" Click="ZoomOut">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="Subtract" Modifiers="Control"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Reset Rotation" Click="ResetRotation">
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="Number0" Modifiers="Control,Shift"/>
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutSubItem Text="Rotate Canvas">
+                            <MenuFlyoutItem Command="{x:Bind RotateCommand}" CommandParameter="-135" Text="-135 degrees"/>
+                            <MenuFlyoutItem Command="{x:Bind RotateCommand}" CommandParameter="-90" Text="-90 degrees"/>
+                            <MenuFlyoutItem Command="{x:Bind RotateCommand}" CommandParameter="-45" Text="-45 degrees"/>
+                            <MenuFlyoutItem Command="{x:Bind RotateCommand}" CommandParameter="0" Text="Reset Rotation"/>
+                            <MenuFlyoutItem Command="{x:Bind RotateCommand}" CommandParameter="45" Text="45 degrees"/>
+                            <MenuFlyoutItem Command="{x:Bind RotateCommand}" CommandParameter="90" Text="90 degrees"/>
+                            <MenuFlyoutItem Command="{x:Bind RotateCommand}" CommandParameter="135" Text="135 degrees"/>
+                            <MenuFlyoutItem Command="{x:Bind RotateCommand}" CommandParameter="180" Text="180 degrees"/>
+                        </MenuFlyoutSubItem>
+                    </muxc:MenuBarItem>
                     <muxc:MenuBarItem Title="Window" Margin="0" CornerRadius="10">
                         <MenuFlyoutItem Text="Reload" Click="ReloadWindow"/>
                         <MenuFlyoutItem Text="New" Click="NewWindow"/>
@@ -164,23 +196,25 @@
 				cg:CustomGrid.GridType="Star"
 				Background="{ThemeResource LayerFillColorDefaultBrush}"
             >
-				<Border
+                <Grid Background="Transparent" x:Name="LayerContainerSizeMaintainer">
+                    <Border
 					x:Name="LayerContainerBackground"
 					HorizontalAlignment="Center"
 					VerticalAlignment="Center"
 					Background="{ThemeResource LayerFillColorDefaultBrush}"
 				>
-                    <ScrollViewer
+                        <ScrollViewer
 					    x:Name="LayerContainerMasker"
 					    HorizontalScrollMode="Disabled"
 					    HorizontalScrollBarVisibility="Disabled"
 					    VerticalScrollMode="Disabled"
 					    VerticalScrollBarVisibility="Disabled"
 					    ZoomMode="Disabled">
-					    <local:LayerContainer x:Name="LayerContainer">
-                        </local:LayerContainer>
-                    </ScrollViewer>
-				</Border>
+                            <local:LayerContainer x:Name="LayerContainer">
+                            </local:LayerContainer>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
                 
 
             </ScrollViewer>
@@ -223,8 +257,15 @@
             <TextBlock x:Name="Zoom" VerticalAlignment="Center">
                 100
             </TextBlock>
-            <TextBlock VerticalAlignment="Center">
+            <TextBlock VerticalAlignment="Center" Margin="0,0,3,0">
                 %
+            </TextBlock>
+            <TextBlock VerticalAlignment="Center" Text="Rotation:" Margin="10,0,3,0"/>
+            <TextBlock x:Name="RotationText" VerticalAlignment="Center">
+                0
+            </TextBlock>
+            <TextBlock VerticalAlignment="Center" Text=" degrees">
+                
             </TextBlock>
         </StackPanel>
 

@@ -11,6 +11,7 @@ using System.Collections.Specialized;
 using Windows.ApplicationModel.DataTransfer;
 using Newtonsoft.Json.Linq;
 using System.IO;
+using Windows.UI.Xaml.Input;
 
 namespace PhotoFlow
 {
@@ -21,12 +22,58 @@ namespace PhotoFlow
     }
     partial class MainPage
     {
+        CompositeTransform LayerContaineCompositeTransformr = new();
+        void UpdateLayerContainerSizeAndRotation()
+        {
+            if (LayerContaineCompositeTransformr.Rotation > 360) LayerContaineCompositeTransformr.Rotation -= 360;
+            else if (LayerContaineCompositeTransformr.Rotation < 0) LayerContaineCompositeTransformr.Rotation += 360;
+            const double twoPiOver360 = 2 * Math.PI / 360;
+            var rot = LayerContaineCompositeTransformr.Rotation;
+            if (rot > 180) rot = 360 - rot;
+            if (rot > 90) rot = 180 - rot;
+            rot *= twoPiOver360;
+            var sin = Math.Sin(rot);
+            var cos = Math.Cos(rot);
+            var ow = LayerContainer.Width;
+            var oh = LayerContainer.Height;
+            LayerContainerSizeMaintainer.Width = ow * cos + oh * sin;
+            LayerContainerSizeMaintainer.Height = ow * sin + oh * cos;
+            var rotdeg = LayerContaineCompositeTransformr.Rotation;
+            RotationText.Text = (rotdeg > 180 ? rotdeg - 360 : rotdeg).ToString();
+        }
         void ImplementingLayersThing()
         {
+            LayerContainer.SetScrollViewer(MainScrollView);
+            
             LayerContainer.SizeUpdate += () =>
             {
                 LayerContainerMasker.Width = LayerContainer.Width;
                 LayerContainerMasker.Height = LayerContainer.Height;
+                UpdateLayerContainerSizeAndRotation();
+            };
+            LayerContainer.SelectionUpdate += (_, idx) =>
+                {
+                    if (idx == -1)
+                    {
+                        LayerContainerBackground.ManipulationMode = ManipulationModes.Rotate | ManipulationModes.TranslateX | ManipulationModes.TranslateY | ManipulationModes.TranslateInertia | ManipulationModes.Scale | ManipulationModes.ScaleInertia;
+                    }
+                    else
+                    {
+                        LayerContainerBackground.ManipulationMode = ManipulationModes.System;
+                    }
+                };
+            LayerContainerBackground.RenderTransform = LayerContaineCompositeTransformr;
+            LayerContainerBackground.ManipulationDelta += (_, e) =>
+            {
+                var tran = e.Delta.Translation;
+                MainScrollView.ChangeView(MainScrollView.HorizontalOffset - tran.X, MainScrollView.VerticalOffset - tran.Y, ZoomFactor * e.Delta.Scale);
+                LayerContaineCompositeTransformr.CenterX = LayerContainerBackground.ActualWidth / 2;
+                LayerContaineCompositeTransformr.CenterY = LayerContainerBackground.ActualHeight / 2;
+                LayerContaineCompositeTransformr.Rotation += e.Delta.Rotation;
+                if (LayerContaineCompositeTransformr.Rotation > 360) LayerContaineCompositeTransformr.Rotation -= 360;
+                else if (LayerContaineCompositeTransformr.Rotation < 0) LayerContaineCompositeTransformr.Rotation += 360;
+                e.Handled = true;
+                UpdateLayerContainerSizeAndRotation();
             };
             var LayerPreviewPanel = new ReverseStackPanel();
             LayerPanel.PropertiesPane.Content = LayerPreviewPanel;
@@ -97,16 +144,22 @@ namespace PhotoFlow
 
         private async void Paste(object sender, RoutedEventArgs e)
         {
+            if (LayerContainer.Selection is Layer.Layer Layer && Layer.RequestPaste()) 
+                return;
             var data = Clipboard.GetContent();
             var layer = await data.ReadAsLayerAsync();
             if (layer != null) LayerContainer.AddNewLayer(layer);
         }
         private void Delete(object sender, RoutedEventArgs e)
         {
+            if (LayerContainer.Selection is Layer.Layer Layer && Layer.RequestDelete())
+                return;
             LayerContainer.Selection?.DeleteSelf();
         }
         private void Duplicate(object sender, RoutedEventArgs e)
         {
+            if (LayerContainer.Selection is Layer.Layer Layer && Layer.RequestDuplicate())
+                return;
             var selection = LayerContainer.Selection;
             if (selection == null) return;
             LayerContainer.AddNewLayer(selection.DeepClone());

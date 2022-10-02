@@ -7,6 +7,7 @@ using PhotoFlow.CommandButton.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using System;
 using Microsoft.UI.Xaml.Controls;
+using Windows.UI.Xaml.Input;
 
 namespace PhotoFlow;
 
@@ -26,6 +27,7 @@ public class PropertiesCommandButton : CommandButtonBase
         PropertiesCommandBar.Layer = Layer;
         base.LayerChanged(Layer);
     }
+
 
     class PropertiesCB : CommandButtonCommandBar
     {

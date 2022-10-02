@@ -8,12 +8,13 @@ using PhotoFlow.CommandButton.Controls;
 using Microsoft.UI.Xaml.Controls;
 using Windows.System;
 using System.Diagnostics;
+using PhotoFlow.Layer;
 
 namespace PhotoFlow
 {
     public class MoveCommandButton : CommandButtonBase
     {
-        private readonly Move MoveCommandBar = new ();
+        private readonly Move MoveCommandBar = new();
         protected override CommandButtonCommandBar CommandBar => MoveCommandBar;
 
         public MoveCommandButton(Border CommandBarPlace) : base(Symbol.TouchPointer, CommandBarPlace)
@@ -26,8 +27,13 @@ namespace PhotoFlow
                 UpdateNumberFromValue();
             });
             var ilc = new LambdaCommand(InvokeLayerChange);
+            MoveCommandBar.EnableMove.Content = new SymbolIcon((Symbol)0xe7c2);
             MoveCommandBar.EnableMove.Command = ilc;
+            MoveCommandBar.EnableScale.Content = new SymbolIcon((Symbol)0xe740);
+            MoveCommandBar.EnableScale.Command = ilc;
+            MoveCommandBar.EnableResize.Content = new SymbolIcon((Symbol)0xe744);
             MoveCommandBar.EnableResize.Command = ilc;
+            MoveCommandBar.EnableRotate.Content = new SymbolIcon(Symbol.Rotate);
             MoveCommandBar.EnableRotate.Command = ilc;
 
             void UpdateNumberFromTBEV(NumberBox _, NumberBoxValueChangedEventArgs _1)
@@ -62,9 +68,35 @@ namespace PhotoFlow
             MoveCommandBar.TB_R.Value = CurrentLayer.Rotation;
             IsUpdatingNumberFromValue = false;
         }
+        bool ResizingXStart = false;
+        bool ResizingYStart = false;
+        bool ResizingXEnd = false;
+        bool ResizingYEnd = false;
+        private void ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
+        {
+            if (MoveCommandBar.EnableResize.IsChecked ?? false)
+            {
+                var layer = CurrentLayer;
+                var ZoomFactor = this.ZoomFactor;
+                var pos = e.Position;
+                var pixelThreshold = 30 / ZoomFactor;
+                ResizingXStart = pos.X <= pixelThreshold;
+                ResizingYStart = pos.Y <= pixelThreshold;
+                ResizingXEnd = pos.X >= layer.Width - pixelThreshold;
+                ResizingYEnd = pos.Y >= layer.Height - pixelThreshold;
+            }
+            else
+            {
+                ResizingXStart = false;
+                ResizingYStart = false;
+                ResizingXEnd = false;
+                ResizingYEnd = false;
+            }
+        }
         private void ManipulationDeltaEvent(object sender, ManipulationDeltaRoutedEventArgs e)
         {
             var layer = CurrentLayer;
+            var ZoomFactor = this.ZoomFactor;
 
             if (e.Container != null)
             {
@@ -72,16 +104,49 @@ namespace PhotoFlow
                 //posX = p.X;
                 //posY = p.Y;
             }
-            var ZoomFactor = this.ZoomFactor;
+            var pos = e.Position;
+            var deltaTranslation = e.Delta.Translation;
+            var pixelThreshold = 30 / ZoomFactor;
+            {
+                var doStuff = false;
+                if (ResizingXStart)
+                {
+                    var dx = deltaTranslation.X / ZoomFactor;
+                    layer.Width -= dx / layer.ScaleX;
+                    layer.X += dx;
+                    doStuff = true;
+                }
+                if (ResizingYStart)
+                {
+                    var dy = deltaTranslation.Y / ZoomFactor;
+                    layer.Height -= dy / layer.ScaleY;
+                    layer.Y += dy;
+                    doStuff = true;
+                }
+                if (ResizingXEnd)
+                {
+                    var dx = deltaTranslation.X / ZoomFactor / layer.ScaleX;
+                    layer.Width += dx;
+                    doStuff = true;
+                }
+                if (ResizingYEnd)
+                {
+                    var dy = deltaTranslation.Y / ZoomFactor / layer.ScaleY;
+                    layer.Height += dy;
+                    doStuff = true;
+                }
+                if (doStuff)
+                    goto End;
+            }
             var scale = (layer.ScaleX + layer.ScaleY) / 2 * e.Delta.Scale;
             layer.ScaleX = scale;
             layer.ScaleY = scale;
-            var delta = e.Delta.Translation;
-            layer.X += delta.X / ZoomFactor;
-            layer.Y += delta.Y / ZoomFactor;
+            layer.X += deltaTranslation.X / ZoomFactor;
+            layer.Y += deltaTranslation.Y / ZoomFactor;
             layer.CenterX = layer.ActualWidth / 2;
             layer.CenterY = layer.ActualHeight / 2;
             layer.Rotation += e.Delta.Rotation;
+        End:
             e.Handled = true;
             UpdateNumberFromValue();
         }
@@ -181,7 +246,14 @@ namespace PhotoFlow
         {
             if (C.GetKeyState(VirtualKey.Shift) == CoreVirtualKeyStates.None && CurrentLayer != null)
             {
-                CurrentLayer.LayerUIElement.ManipulationMode |= ManipulationModes.System;
+                try
+                {
+                    CurrentLayer.LayerUIElement.ManipulationMode |= ManipulationModes.System;
+                }
+                catch
+                {
+
+                }
                 CancelWheelIfKeyUp();
             }
         }
@@ -189,13 +261,13 @@ namespace PhotoFlow
         {
             base.RequestAddLayerEvent(Layer);
             var Element = Layer.LayerUIElement;
-            if (MoveCommandBar.EnableMove.IsChecked ?? false)
+            if ((MoveCommandBar.EnableMove.IsChecked ?? false) || (MoveCommandBar.EnableResize.IsChecked ?? false))
             {
                 Element.ManipulationMode |= ManipulationModes.TranslateX;
                 Element.ManipulationMode |= ManipulationModes.TranslateY;
             }
             Element.ManipulationMode &= ~ManipulationModes.System;
-            if (MoveCommandBar.EnableResize.IsChecked ?? false)
+            if (MoveCommandBar.EnableScale.IsChecked ?? false)
             {
                 Element.ManipulationMode &= ~ManipulationModes.System;
                 Element.ManipulationMode |= ManipulationModes.Scale;
@@ -206,6 +278,7 @@ namespace PhotoFlow
                 Element.ManipulationMode |= ManipulationModes.Rotate;
             }
             Element.ManipulationDelta += ManipulationDeltaEvent;
+            Element.ManipulationStarted += ManipulationStarted;
             //Element.PointerEntered += PointerEntered;
             //Element.PointerExited += PointerExited;
             //Element.PointerCaptureLost += PointerExited;
@@ -258,6 +331,6 @@ namespace PhotoFlow
         {
             Action?.Invoke(parameter);
         }
-        public static implicit operator LambdaCommand(Action a) => new (a);
+        public static implicit operator LambdaCommand(Action a) => new(a);
     }
 }
