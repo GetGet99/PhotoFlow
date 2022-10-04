@@ -79,7 +79,7 @@ public sealed partial class MainPage : Page
         titleBar.ButtonForegroundColor = Foreground;
         titleBar.ButtonInactiveForegroundColor = Foreground;
         titleBar.ExtendsContentIntoTitleBar = true;
-        Frame appWindowContentFrame = new Frame();
+        Frame appWindowContentFrame = new();
         ElementCompositionPreview.SetAppWindowContent(appWindow, appWindowContentFrame);
         await appWindow.TryShowAsync();
         await Task.Delay(2000);

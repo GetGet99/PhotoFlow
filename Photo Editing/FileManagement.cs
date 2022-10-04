@@ -1,6 +1,8 @@
-﻿using OpenCvSharp;
+﻿#nullable enable
+using OpenCvSharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,18 +29,14 @@ namespace PhotoFlow
             Windows.Storage.StorageFile file = await picker.PickSingleFileAsync();
             var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read);
             ulong size = stream.Size;
-            using (var inputStream = stream.GetInputStreamAt(0))
-            {
-                using (var dataReader = new Windows.Storage.Streams.DataReader(inputStream))
-                {
-                    uint numBytesLoaded = await dataReader.LoadAsync((uint)size);
-                    byte[] bytes = new byte[numBytesLoaded];
-                    dataReader.ReadBytes(bytes);
-                    return bytes.ToMat();
-                }
-            }
+            using var inputStream = stream.GetInputStreamAt(0);
+            using var dataReader = new Windows.Storage.Streams.DataReader(inputStream);
+            uint numBytesLoaded = await dataReader.LoadAsync((uint)size);
+            byte[] bytes = new byte[numBytesLoaded];
+            dataReader.ReadBytes(bytes);
+            return bytes.ToMat();
         }
-        public static async Task<(string, byte[])> OpenFile()
+        public static async Task<(string, byte[]?)> OpenFile()
         {
             var picker = new Windows.Storage.Pickers.FileOpenPicker
             {
@@ -54,18 +52,14 @@ namespace PhotoFlow
             if (file == null) return ("<Canceled>", null);
             var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read);
             ulong size = stream.Size;
-            using (var inputStream = stream.GetInputStreamAt(0))
-            {
-                using (var dataReader = new Windows.Storage.Streams.DataReader(inputStream))
-                {
-                    uint numBytesLoaded = await dataReader.LoadAsync((uint)size);
-                    byte[] bytes = new byte[numBytesLoaded];
-                    dataReader.ReadBytes(bytes);
+            using var inputStream = stream.GetInputStreamAt(0);
+            using var dataReader = new Windows.Storage.Streams.DataReader(inputStream);
+            uint numBytesLoaded = await dataReader.LoadAsync((uint)size);
+            byte[] bytes = new byte[numBytesLoaded];
+            dataReader.ReadBytes(bytes);
 
 
-                    return (file.FileType, bytes);
-                }
-            }
+            return (file.FileType, bytes);
         }
         public static async Task<bool> SaveFile(Mat mat)
         {

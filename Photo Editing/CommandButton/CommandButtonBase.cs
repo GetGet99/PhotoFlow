@@ -1,4 +1,5 @@
-﻿using OpenCvSharp;
+﻿#nullable enable
+using OpenCvSharp;
 using Windows.UI.Xaml.Controls;
 using PhotoFlow.CommandButton.Controls;
 namespace PhotoFlow;
@@ -9,8 +10,8 @@ public abstract class CommandButtonBase
     protected Size CanvasSize => new(LayerContainer.Width, LayerContainer.Height);
     protected Size CanvasPadding => new(LayerContainer.PaddingPixel, LayerContainer.PaddingPixel);
     protected readonly Border CommandBarPlace;
-    protected Layer.Layer CurrentLayer { get; private set; }
-    protected float ZoomFactor => ScrollViewer.ZoomFactor;
+    protected Layer.Layer? CurrentLayer { get; private set; }
+    protected float? ZoomFactor => ScrollViewer?.ZoomFactor;
     protected abstract CommandButtonCommandBar CommandBar { get; }
     public void SetLayerContainer(LayerContainer LayerContainer)
         => this.LayerContainer = LayerContainer;
@@ -18,10 +19,12 @@ public abstract class CommandButtonBase
         => this.ScrollViewer = ScrollViewer;
     protected LayerContainer LayerContainer { get; private set; }
     protected ScrollViewer ScrollViewer { get; private set; }
-    public CommandButtonBase(Symbol Icon, Border CommandBarPlace)
+    public CommandButtonBase(Symbol Icon, Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer)
     {
         this.CommandBarPlace = CommandBarPlace;
         this.Icon = Icon;
+        this.LayerContainer = LayerContainer;
+        this.ScrollViewer = MainScrollViewer;
     }
     public void Select() => Selected();
     protected virtual void Selected()
@@ -42,11 +45,11 @@ public abstract class CommandButtonBase
     protected virtual void RequestRemoveLayerEvent(Layer.Layer Layer) { }
     protected virtual void RequestAddLayerEvent(Layer.Layer Layer) { }
     public void InvokeLayerChange() => LayerChanged(LayerContainer.Selection);
-    protected virtual void LayerChanged(Layer.Layer Layer)
+    protected virtual void LayerChanged(Layer.Layer? Layer)
     {
         if (CurrentLayer != null) RequestRemoveLayerEvent(CurrentLayer);
         CurrentLayer = Layer;
-        if (CurrentLayer != null) RequestAddLayerEvent(Layer);
+        if (Layer != null) RequestAddLayerEvent(Layer);
     }
     protected void AddNewLayer(Layer.Layer Layer)
         => LayerContainer.AddNewLayer(Layer);

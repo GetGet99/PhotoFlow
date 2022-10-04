@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,7 +23,7 @@ namespace PhotoFlow
     }
     partial class MainPage
     {
-        CompositeTransform LayerContaineCompositeTransformr = new();
+        readonly CompositeTransform LayerContaineCompositeTransformr = new();
         void UpdateLayerContainerSizeAndRotation()
         {
             if (LayerContaineCompositeTransformr.Rotation > 360) LayerContaineCompositeTransformr.Rotation -= 360;
@@ -172,7 +173,7 @@ namespace PhotoFlow
         public static async Task<T> GetAsAsync<T>(this DataPackageView dataObject, string format) => (T)(await dataObject.GetDataAsync(format));
         public static Task<MemoryStream> GetStreamAsync(this DataPackageView dataObject, string format) => dataObject.GetAsAsync<MemoryStream>(format);
         public static Task<string> GetStringAsync(this DataPackageView dataObject, string format) => dataObject.GetAsAsync<string>(format);
-        public static async Task<Layer.Layer> ReadAsLayerAsync(this DataPackageView data)
+        public static async Task<Layer.Layer?> ReadAsLayerAsync(this DataPackageView data)
         {
             System.Diagnostics.Debug.WriteLine(string.Join(", ", data.AvailableFormats));
             if (data.Contains("GPE"))

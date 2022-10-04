@@ -1,5 +1,8 @@
-﻿using System;
+﻿#nullable enable
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
@@ -13,32 +16,27 @@ namespace PhotoFlow
     partial class MainPage
     {
         Size CanvasDimension;
-        
+
     }
     public static partial class Extension
     {
         const bool InPlaceDefault = false;
-        public static BitmapImage AsBitmapImage(this byte[] byteArray)
+        [return: NotNullIfNotNull("byteArray")]
+        public static BitmapImage? AsBitmapImage(this byte[]? byteArray)
         {
-            if (byteArray != null)
-            {
-                using (var stream = new InMemoryRandomAccessStream())
-                {
-                    stream.WriteAsync(byteArray.AsBuffer()).GetResults();
-                    // I made this one synchronous on the UI thread;
-                    // this is not a best practice.
-                    var image = new BitmapImage();
-                    stream.Seek(0);
-                    image.SetSource(stream);
-                    return image;
-                }
-            }
+            if (byteArray == null) return null;
 
-            return null;
+            using var stream = new InMemoryRandomAccessStream();
+            stream.WriteAsync(byteArray.AsBuffer()).GetResults();
+            
+            var image = new BitmapImage();
+            stream.Seek(0);
+            image.SetSource(stream);
+            return image;
         }
         public static Mat Merge(this Mat[] Mats, bool DisposeEverything = false)
         {
-            Mat mat = new Mat();
+            Mat mat = new();
             Cv2.Merge(Mats, mat);
             if (DisposeEverything) Mats.DisposeAndDelete();
             return mat;

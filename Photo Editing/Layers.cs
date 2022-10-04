@@ -23,6 +23,8 @@ using CSUI;
 using Windows.UI.ViewManagement;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Diagnostics.CodeAnalysis;
+using Windows.Foundation.Metadata;
 
 namespace PhotoFlow.Layer
 {
@@ -58,7 +60,8 @@ namespace PhotoFlow.Layer
                 {
                     // Dark Mode
                     BorderColor.Color = UISettings.GetColorValue(UIColorType.AccentLight2);
-                } else
+                }
+                else
                 {
                     // Light Mode
                     BorderColor.Color = UISettings.GetColorValue(UIColorType.AccentDark2);
@@ -72,16 +75,13 @@ namespace PhotoFlow.Layer
         }
         protected static readonly SolidColorBrush BorderColor = new();
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public abstract Types LayerType { get; }
-        public VariableUpdateAlert<string> LayerName { get; } = new VariableUpdateAlert<string>() { Value = "Unnamed Layer" };
+        public VariableUpdateAlert<string> LayerName { get; } = new("Unnamed Layer");
         private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         public bool Visible
         {
@@ -95,7 +95,8 @@ namespace PhotoFlow.Layer
         public double CenterX
         {
             get => RenderTransform.CenterX;
-            set {
+            set
+            {
                 RenderTransform.CenterX = value;
                 NotifyPropertyChanged();
             }
@@ -197,7 +198,7 @@ namespace PhotoFlow.Layer
 
         public void LoadData(JObject json)
         {
-            LayerName.Value = json["LayerName"]?.ToObject<string>();
+            LayerName.Value = json["LayerName"]?.ToObject<string>() ?? "Unnamed Layer";
             var CenterPoint = json["CenterPoint"]?.ToObject<double[]>();
             var Scale = json["Scale"]?.ToObject<double[]>();
 
@@ -237,7 +238,7 @@ namespace PhotoFlow.Layer
         public double ActualHeight => LayerUIElement.ActualHeight;
 
 
-        public VariableUpdateAlert<int> SelectionIndexUpdateTarget => LayerContainer.SelectionIndex;
+        public VariableUpdateAlert<int>? SelectionIndexUpdateTarget => LayerContainer?.SelectionIndex;
         public int Index { get; private set; }
         public void UpdateThisIndex(int newIndex)
         {
@@ -247,33 +248,22 @@ namespace PhotoFlow.Layer
         protected abstract JObject OnDataSaving();
         protected abstract void OnDataLoading(JObject storage, Task MainLoadingTask);
 
-        public Control Control { get; private set; }
+        public Control? Control { get; private set; }
 
         public LayerPreview LayerPreview { get; private set; }
         protected LayerContainer? LayerContainer => (LayerUIElement.Parent is LayerContainer L) ? L : null;
 
-        public VariableUpdateAlert<bool> Selecting { get; } = new VariableUpdateAlert<bool>() { Value = false };
+        public VariableUpdateAlert<bool> Selecting { get; } = new(false);
 
 
         protected Layer()
         {
             Init();
         }
-
+        [MemberNotNull(nameof(LayerUIElement), nameof(LayerPreview))]
         void Init()
         {
-            Extension.RunOnUIThread(() =>
-            {
-                LayerUIElement = new Grid
-                {
-                    BorderThickness = new Thickness(2),
-                    CanBeScrollAnchor = false,
-                    IsHitTestVisible = false,
-                    RenderTransform = new CompositeTransform(),
-                    Background = new SolidColorBrush(Colors.Transparent)
-                };
-                LayerPreview = new LayerPreview(this);
-            });
+            InitUIThread();
             LayerName.Update += (oldVal, newVal) =>
             {
                 Extension.RunOnUIThread(() => LayerPreview.LayerName = newVal);
@@ -287,6 +277,24 @@ namespace PhotoFlow.Layer
                 if (newVal) Select(); else Deselect();
             };
         }
+        [MemberNotNull(nameof(LayerUIElement), nameof(LayerPreview))]
+        void InitUIThread()
+        {
+            Extension.RunOnUIThread(() =>
+            {
+                LayerUIElement = new Grid
+                {
+                    BorderThickness = new Thickness(2),
+                    CanBeScrollAnchor = false,
+                    IsHitTestVisible = false,
+                    RenderTransform = new CompositeTransform(),
+                    Background = new SolidColorBrush(Colors.Transparent)
+                };
+                LayerPreview = new LayerPreview(this);
+            });
+#pragma warning disable CS8774
+        }
+#pragma warning restore CS8774
         protected abstract void OnCreate();
         protected void CompleteCreate()
         {
@@ -402,15 +410,17 @@ namespace PhotoFlow.Layer
 
         public abstract void Dispose();
     }
-    public class MatLayer : Layer, Features.Mat.IMatFeatureApplyable<Mat>, Features.ICanBecomeFeatureDataType<Mat>
+    public class MatLayer : Layer, Features.Mat.IMatFeatureApplyable<Mat?>, Features.ICanBecomeFeatureDataType<Mat?>
     {
 
         public override Types LayerType { get; } = Types.Mat;
 
-        public Mat Mat { get; set; }
-        public Mat SoftSelectedPartEdit { get => Mat; set => Mat = value; }
-        public Mat HardSelectedPartEdit { get => Mat; set => Mat = value; }
-        public Features.IFeatureDataTypes<Mat> GetFeatureDataType => Mat;
+        public Mat? Mat { get; set; }
+        [Deprecated("Will be removed", DeprecationType.Deprecate, 1)]
+        public Mat? SoftSelectedPartEdit { get => Mat; set => Mat = value; }
+        [Deprecated("Will be removed", DeprecationType.Deprecate, 1)]
+        public Mat? HardSelectedPartEdit { get => Mat; set => Mat = value; }
+        public Features.IFeatureDataTypes<Mat?> GetFeatureDataType => Mat;
 
         Image Image;
 
@@ -432,11 +442,12 @@ namespace PhotoFlow.Layer
             LoadData(json);
             OnCreate();
         }
+        [MemberNotNull(nameof(Image))]
         protected override void OnCreate()
         {
             var m = Mat;
-            var width = m.Width;
-            var height = m.Height;
+            var width = m?.Width ?? 0;
+            var height = m?.Height ?? 0;
             Extension.RunOnUIThread(() =>
             {
                 Image = new Image
@@ -451,41 +462,43 @@ namespace PhotoFlow.Layer
                 Height = height;
             });
             CompleteCreate();
+#pragma warning disable CS8774
         }
+#pragma warning restore CS8774
 
         protected override JObject OnDataSaving()
         {
-            return new JObject(
+            return Mat is null ? new JObject() : new JObject(
                 new JProperty("Image", Mat.ToBytes())
             );
         }
         protected override void OnDataLoading(JObject json, Task _)
         {
-            Mat = json["Image"].ToObject<byte[]>().ToMat();
+            Mat = json["Image"]?.ToObject<byte[]>()?.ToMat();
             if (Image != null) Extension.RunOnUIThread(UpdateImage);
         }
         [RunOnUIThread]
         public void UpdateImage()
         {
-            Image.Source = Mat.ToBitmapImage(DisposeMat: false);
+            Image.Source = Mat?.ToBitmapImage(DisposeMat: false);
             UpdatePreview();
         }
         public override void Dispose()
         {
-            Mat.Dispose();
+            Mat?.Dispose();
         }
 
-        public void ApplyFeature(Features.Mat.MatBasedFeature<Mat> Feature)
+        public void ApplyFeature(Features.Mat.MatBasedFeature<Mat?> Feature)
         {
-            HardSelectedPartEdit = Feature.ForwardApply(Mat);
+            Mat = Feature.ForwardApply(Mat);
             UpdateImage();
         }
     }
     public class InkingLayer : Layer
     {
         public override Types LayerType { get; } = Types.Inking;
-        public readonly VariableUpdateAlert<bool> TouchAllowed = new();
-        public readonly VariableUpdateAlert<bool> DrawingAllowed = new();
+        public readonly VariableUpdateAlert<bool> TouchAllowed = new(false);
+        public readonly VariableUpdateAlert<bool> DrawingAllowed = new(false);
         static readonly SolidColorBrush SelectionColor = BorderColor;
         readonly Canvas Canvas = new()
         {
@@ -507,8 +520,8 @@ namespace PhotoFlow.Layer
             ManipulationMode = ManipulationModes.TranslateX | ManipulationModes.TranslateY,
             IsHitTestVisible = true
         };
-        CompositeTransform SelectionRenderTransform = new CompositeTransform();
-        public InkCanvas? InkCanvas { get; private set; }
+        readonly CompositeTransform SelectionRenderTransform = new();
+        public InkCanvas InkCanvas { get; private set; }
         public InkingLayer(Rect Where)
         {
             OnCreate();
@@ -525,6 +538,7 @@ namespace PhotoFlow.Layer
             CompleteCreate();
         }
         Windows.Foundation.Point LatestMouse = new();
+        [MemberNotNull(nameof(InkCanvas))]
         protected override void OnCreate()
         {
             TouchAllowed.Update += (oldValue, newValue) => UpdateInkingDeviceOnUIThread();
@@ -542,25 +556,13 @@ namespace PhotoFlow.Layer
                 Canvas.Children.Add(SelectionPolygon);
                 Canvas.Children.Add(SelectionRectangle);
                 LayerUIElement.Children.Add(Canvas);
-                //LayerUIElement.Children.Add(SelectionRectangle);
 
                 InkCanvas.InkPresenter.StrokesCollected += (o, e) => { ClearInkSlection(); UpdatePreview(); };
                 InkCanvas.InkPresenter.StrokesErased += (o, e) => { ClearInkSlection(); UpdatePreview(); };
                 InkCanvas.PointerMoved += (_, e) => LatestMouse = e.GetCurrentPoint(InkCanvas).Position;
                 SelectionRectangle.RenderTransform = SelectionRenderTransform;
                 SelectionRectangle.Stroke = SelectionColor;
-                //SelectionRectangle.PointerEntered += delegate
-                //{
-                //    //Debugger.Break();
-                //};
-                //SelectionRectangle.PointerPressed += delegate
-                //{
-                //    Debugger.Break();
-                //};
-                //SelectionRectangle.PointerExited += delegate
-                //{
-                //    Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.Arrow, 1);
-                //};
+
                 SelectionRectangle.ManipulationStarted += (_, e) => e.Handled = true;
                 SelectionRectangle.ManipulationDelta += (_, e) =>
                 {
@@ -668,7 +670,9 @@ namespace PhotoFlow.Layer
                     Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.Arrow, 1);
                 };
             });
+#pragma warning disable CS8774
         }
+#pragma warning restore CS8774
         protected override void Deselect()
         {
             ClearInkSlection();
@@ -692,7 +696,7 @@ namespace PhotoFlow.Layer
         {
             UpdateInkSelectionRectangle(InkCanvas.InkPresenter.StrokeContainer.SelectWithPolyLine(Polyline));
         }
-        
+
         public Windows.Foundation.Rect SelectionBounds { get; private set; }
         public void UpdateInkSelectionRectangle(Windows.Foundation.Rect Bounds)
         {
@@ -814,26 +818,34 @@ namespace PhotoFlow.Layer
 
         protected override void OnDataLoading(JObject json, Task _)
         {
-            var ms = new MemoryStream(json["Ink"].ToObject<byte[]>());
-            Extension.RunOnUIThread(async () => await InkCanvas.InkPresenter.StrokeContainer.LoadAsync(ms.AsRandomAccessStream()));
-            ms.Dispose();
+            var inkbytes = json["Ink"]?.ToObject<byte[]>();
+            if (inkbytes != null)
+            {
+                using var ms = new MemoryStream(inkbytes);
+                Extension.RunOnUIThread(async () => await InkCanvas.InkPresenter.StrokeContainer.LoadAsync(ms.AsRandomAccessStream()));
+            }
         }
     }
     public class TextLayer : Layer
     {
         public override Types LayerType { get; } = Types.Text;
         public TextBlock TextBlock { get; private set; }
-        string _Text;
-        public string Text
+        string? _Text;
+        public string? Text
         {
-            get => TextBlock.Text;
+            get
+            {
+                _Text ??= TextBlock.Text;
+                return TextBlock.Text;
+            }
             set
             {
                 _Text = value;
                 if (TextBlock != null) TextBlock.Text = value;
             }
         }
-        FontFamily _Font;
+        FontFamily? _Font;
+
         public FontFamily Font
         {
             get => TextBlock.FontFamily;
@@ -877,6 +889,7 @@ namespace PhotoFlow.Layer
             X = Where.X;
             Y = Where.Y;
         }
+        [MemberNotNull(nameof(TextBlock))]
         protected override void OnCreate()
         {
             Extension.RunOnUIThread(() =>
@@ -894,11 +907,13 @@ namespace PhotoFlow.Layer
 
                 LayerUIElement.Children.Add(TextBlock);
             });
+#pragma warning disable CS8774
         }
+#pragma warning restore CS8774
         public override void Dispose() { }
         protected override JObject OnDataSaving()
         {
-            string Text = "", FontFamily = "";
+            string? Text = "", FontFamily = "";
             double? FontSize = default;
             Color TextColor = default;
             Extension.RunOnUIThread(() =>
@@ -942,6 +957,7 @@ namespace PhotoFlow.Layer
     }
     public abstract class ShapeLayer : Layer
     {
+        [DisallowNull]
         public abstract Brush BackgroundBrush { get; set; }
         public bool Acrylic
         {
@@ -987,15 +1003,8 @@ namespace PhotoFlow.Layer
             }
         }
 
-        public ShapeLayer(JObject json)
-        {
-            LoadData(json);
-            OnCreate();
-
-        }
         public ShapeLayer()
         {
-            OnCreate();
         }
         public override void Dispose() { }
         protected override JObject OnDataSaving()
@@ -1059,63 +1068,69 @@ namespace PhotoFlow.Layer
     {
         public override Types LayerType { get; } = Types.RectangleShape;
         Rectangle Rectangle { get; set; }
-        Brush _BackgroundBrush;
+        Brush? _BackgroundBrush;
         public override Brush BackgroundBrush
         {
-            get => Rectangle == null ? _BackgroundBrush : Rectangle.Fill;
+            get => Rectangle.Fill;
             set
             {
                 if (Rectangle == null) _BackgroundBrush = value;
                 else Rectangle.Fill = value;
             }
         }
-        public RectangleLayer() : base() { }
-        public RectangleLayer(JObject json) : base(json) { }
+        public RectangleLayer() { OnCreate(); }
+        public RectangleLayer(JObject json) { LoadData(json); OnCreate(); }
+        [MemberNotNull(nameof(Rectangle))]
         protected override void OnCreate()
         {
             Extension.RunOnUIThread(() =>
             {
                 var BackgroundBrush = _BackgroundBrush;
-                if (BackgroundBrush == null) BackgroundBrush = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+                BackgroundBrush ??= new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
                 Rectangle = new Rectangle()
                 {
                     Fill = BackgroundBrush
                 };
                 LayerUIElement.Children.Add(Rectangle);
             });
+#pragma warning disable CS8774
         }
+#pragma warning restore CS8774
     }
     public class EllipseLayer : ShapeLayer
     {
         public override Types LayerType { get; } = Types.EllipseShape;
         Ellipse Ellipse { get; set; }
-        Brush _BackgroundBrush;
+        Brush? _BackgroundBrush;
+        [DisallowNull]
         public override Brush BackgroundBrush
         {
-            get => Ellipse == null ? _BackgroundBrush : Ellipse.Fill;
+            get => Ellipse.Fill;
             set
             {
                 if (Ellipse == null) _BackgroundBrush = value;
                 else Ellipse.Fill = value;
             }
         }
-        public EllipseLayer() : base() { }
-        public EllipseLayer(JObject json) : base(json) { }
+        public EllipseLayer() { OnCreate(); }
+        public EllipseLayer(JObject json) { LoadData(json); OnCreate(); }
+        [MemberNotNull(nameof(Ellipse))]
         protected override void OnCreate()
         {
             Extension.RunOnUIThread(() =>
             {
-                var BackgroundBrush = _BackgroundBrush;
-                if (BackgroundBrush == null) BackgroundBrush = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+                var BackgroundBrush = _BackgroundBrush ?? new SolidColorBrush(Colors.Transparent);
                 Ellipse = new Ellipse()
                 {
                     Fill = BackgroundBrush
                 };
                 LayerUIElement.Children.Add(Ellipse);
             });
-        }
-    }
 
+#pragma warning disable CS8774
+        }
+#pragma warning restore CS8774
+    }
 }
 namespace PhotoFlow
 {
@@ -1128,7 +1143,7 @@ namespace PhotoFlow
         }
         public static T DeepClone<T>(this T Layer) where T : Layer.Layer
         {
-            return (T)LayerContainer.LoadLayer(Layer.SaveData());
+            return ((T?)LayerContainer.LoadLayer(Layer.SaveData())) ?? throw new NullReferenceException();
         }
     }
 }

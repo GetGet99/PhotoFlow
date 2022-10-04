@@ -17,14 +17,17 @@ namespace PhotoFlow
         private readonly Move MoveCommandBar = new();
         protected override CommandButtonCommandBar CommandBar => MoveCommandBar;
 
-        public MoveCommandButton(Border CommandBarPlace) : base(Symbol.TouchPointer, CommandBarPlace)
+        public MoveCommandButton(Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.TouchPointer, CommandBarPlace, LayerContainer, MainScrollViewer)
         {
 
             MoveCommandBar.ResetSize.Command = new LambdaCommand(() =>
             {
-                CurrentLayer.X = 0;
-                CurrentLayer.Y = 0;
-                UpdateNumberFromValue();
+                if (CurrentLayer is Layer.Layer layer)
+                {
+                    layer.X = 0;
+                    layer.Y = 0;
+                    UpdateNumberFromValue();
+                }
             });
             var ilc = new LambdaCommand(InvokeLayerChange);
             MoveCommandBar.EnableMove.Content = new SymbolIcon((Symbol)0xe7c2);
@@ -61,11 +64,13 @@ namespace PhotoFlow
         bool IsUpdatingNumberFromValue = false;
         void UpdateNumberFromValue()
         {
+            var layer = CurrentLayer;
+            if (layer == null) return;
             IsUpdatingNumberFromValue = true;
-            MoveCommandBar.TB_X.Value = CurrentLayer.X;
-            MoveCommandBar.TB_Y.Value = CurrentLayer.Y;
-            MoveCommandBar.TB_S.Value = (CurrentLayer.ScaleX + CurrentLayer.ScaleY) / 2;
-            MoveCommandBar.TB_R.Value = CurrentLayer.Rotation;
+            MoveCommandBar.TB_X.Value = layer.X;
+            MoveCommandBar.TB_Y.Value = layer.Y;
+            MoveCommandBar.TB_S.Value = (layer.ScaleX + layer.ScaleY) / 2;
+            MoveCommandBar.TB_R.Value = layer.Rotation;
             IsUpdatingNumberFromValue = false;
         }
         bool ResizingXStart = false;
@@ -74,7 +79,7 @@ namespace PhotoFlow
         bool ResizingYEnd = false;
         private void ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
         {
-            if (MoveCommandBar.EnableResize.IsChecked ?? false)
+            if ((MoveCommandBar.EnableResize.IsChecked ?? false) && CurrentLayer is not null)
             {
                 var layer = CurrentLayer;
                 var ZoomFactor = this.ZoomFactor;
@@ -96,7 +101,8 @@ namespace PhotoFlow
         private void ManipulationDeltaEvent(object sender, ManipulationDeltaRoutedEventArgs e)
         {
             var layer = CurrentLayer;
-            var ZoomFactor = this.ZoomFactor;
+            if (layer == null) return;
+            var ZoomFactor = this.ZoomFactor ?? 1;
 
             if (e.Container != null)
             {
@@ -104,9 +110,7 @@ namespace PhotoFlow
                 //posX = p.X;
                 //posY = p.Y;
             }
-            var pos = e.Position;
             var deltaTranslation = e.Delta.Translation;
-            var pixelThreshold = 30 / ZoomFactor;
             {
                 var doStuff = false;
                 if (ResizingXStart)
@@ -150,16 +154,14 @@ namespace PhotoFlow
             e.Handled = true;
             UpdateNumberFromValue();
         }
-        private void PointerEntered(object? _, PointerRoutedEventArgs? _1)
-        {
-            Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.SizeAll, 1);
-        }
-        private void PointerExited(object? _, PointerRoutedEventArgs? _1)
-        {
-            Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.Arrow, 1);
-        }
-        //int NotSameCount = 0;
-        //bool PreviouslyScrollUp = false;
+        //private void PointerEntered(object? _, PointerRoutedEventArgs? _1)
+        //{
+        //    Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.SizeAll, 1);
+        //}
+        //private void PointerExited(object? _, PointerRoutedEventArgs? _1)
+        //{
+        //    Window.Current.CoreWindow.PointerCursor = new CoreCursor(CoreCursorType.Arrow, 1);
+        //}
         private void PointerWheel(object sender, PointerRoutedEventArgs e)
         {
             if (CurrentLayer is Layer.Layer Layer)
@@ -168,22 +170,9 @@ namespace PhotoFlow
                 switch (e.KeyModifiers)
                 {
                     case VirtualKeyModifiers.Control | VirtualKeyModifiers.Shift:
-                        //bool ScrollUp = dblDelta_Scroll > 0;
                         Debug.WriteLine(dblDelta_Scroll);
-                        //if (PreviouslyScrollUp != ScrollUp)
-                        //{
-                        //    NotSameCount++;
-                        //    if (NotSameCount > 2) PreviouslyScrollUp = ScrollUp;
-                        //    break;
-                        //}
-                        //else NotSameCount = 0;
-                        //dblDelta_Scroll = dblDelta_Scroll > 0 ? (dblDelta_Scroll * 0.0005) : ((1 / -dblDelta_Scroll - 1) * 0.0325);
-                        //var sign = dblDelta_Scroll > 0 ? 1 : -1;
-                        //dblDelta_Scroll = sign;
-                        //dblDelta_Scroll = Math.Abs(dblDelta_Scroll);
-                        //dblDelta_Scroll = dblDelta_Scroll > 100 ? 100 : dblDelta_Scroll;
+                        
                         dblDelta_Scroll = dblDelta_Scroll > 0 ? 5 : -5;
-                        //dblDelta_Scroll *= sign;
                         dblDelta_Scroll = dblDelta_Scroll > 0 ? (dblDelta_Scroll * 0.0002) : ((1 / -dblDelta_Scroll - 1) * 0.002);
                         dblDelta_Scroll += 1;
                         Layer.CenterX = Layer.ActualWidth / 2;
@@ -235,7 +224,7 @@ namespace PhotoFlow
         }
         void CancelWheelIfKeyUp()
         {
-            var Element = CurrentLayer.LayerUIElement;
+            var Element = CurrentLayer?.LayerUIElement;
             if (Element == null) return;
             Element.PointerWheelChanged -= PointerWheel;
             ScrollViewer.HorizontalScrollMode = ScrollMode.Enabled;

@@ -17,7 +17,7 @@ public class PropertiesCommandButton : CommandButtonBase
     private readonly PropertiesCB PropertiesCommandBar = new();
     protected override CommandButtonCommandBar CommandBar => PropertiesCommandBar;
 
-    public PropertiesCommandButton(Border CommandBarPlace) : base(Symbol.Repair, CommandBarPlace)
+    public PropertiesCommandButton(Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Repair, CommandBarPlace, LayerContainer, MainScrollViewer)
     {
 
     }

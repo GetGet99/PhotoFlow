@@ -15,7 +15,7 @@ public class TextCommandButton : CommandButtonBase
     private readonly Text TextCommandBar = new();
     protected override CommandButtonCommandBar CommandBar => TextCommandBar;
 
-    public TextCommandButton(Border CommandBarPlace) : base(Symbol.Font, CommandBarPlace)
+    public TextCommandButton(Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Font, CommandBarPlace, LayerContainer, MainScrollViewer)
     {
         TextCommandBar.CreateNewLayer.Click += (_, _1) =>
         {

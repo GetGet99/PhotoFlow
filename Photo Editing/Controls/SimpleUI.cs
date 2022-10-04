@@ -1,17 +1,7 @@
-﻿using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
+﻿#nullable enable
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using System;
-using System.Linq;
-using Windows.Foundation;
-using System.Threading.Tasks;
-using Windows.ApplicationModel.DataTransfer;
-using System.IO;
-using Windows.Storage.Streams;
-using Windows.Storage.Pickers;
-using Windows.Storage;
-using OpenCvSharp;
 using Size = Windows.Foundation.Size;
 using Rect = Windows.Foundation.Rect;
 

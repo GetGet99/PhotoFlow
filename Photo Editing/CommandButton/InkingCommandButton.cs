@@ -26,7 +26,7 @@ public class InkingCommandButton : CommandButtonBase
 
     Layer.InkingLayer? InkLayer;
 
-    public InkingCommandButton(Border CommandBarPlace) : base(Symbol.Edit, CommandBarPlace)
+    public InkingCommandButton(Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Edit, CommandBarPlace, LayerContainer, MainScrollViewer)
     {
         InkingCommandBar.CreateNewLayer.Click += (s, e) =>
         {

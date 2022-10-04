@@ -1,12 +1,8 @@
 ﻿#nullable enable
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.UI.Xaml;
 using Windows.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls;
@@ -40,7 +36,7 @@ class MatImage : IDisposable, IMatDisplayer
         Mat_?.Dispose();
     }
     public FrameworkElement UIElement => ImageElement;
-    Image ImageElement;
+    readonly Image ImageElement;
     Mat? Mat_;
     public Mat? Mat
     {
@@ -72,7 +68,7 @@ class MatImage : IDisposable, IMatDisplayer
         var datacontent = await GetDataPackageContent();
         Debug.Assert(datacontent != null);
         if (datacontent is null) return null;
-        var (bytes, stream, BitmapMemRef, StorageFile) = datacontent.Value;
+        var (_, stream, BitmapMemRef, _1) = datacontent.Value;
         try
         {
             data.SetData("PhotoToysImage", stream);
@@ -111,7 +107,7 @@ class MatImage : IDisposable, IMatDisplayer
     public MenuFlyout MenuFlyout { get; }
     public bool OverwriteDefaultTooltip { get; set; }
     public event Func<Point, string>? DefaultTooltipOverwriter;
-    public MatImage(bool DisableView = false, string AddToInventoryLabel = "Add To Inventory", Symbol AddToInventorySymbol = Symbol.Add)
+    public MatImage(bool DisableView = false) // , string AddToInventoryLabel = "Add To Inventory", Symbol AddToInventorySymbol = Symbol.Add
     {
         ImageElement = new Image
         {
@@ -275,8 +271,6 @@ class MatImage : IDisposable, IMatDisplayer
     {
         if (Mat_ != null) Clipboard.SetContent(await GetDataPackage());
     }
-    static readonly Guid _dtm_iid =
-        new Guid(0xa5caee9b, 0x8708, 0x49d1, 0x8d, 0x36, 0x67, 0xd2, 0x5a, 0x8d, 0xa0, 0x0c);
     public async Task Share()
     {
         var t = new TaskCompletionSource<bool>();
@@ -400,8 +394,9 @@ class DoubleMatDisplayer : IDisposable, IMatDisplayer
         Text = "Heatmap View"
     };
     public MatImage MatImage { get; }
-    public DoubleMatDisplayer(bool DisableView = false, string AddToInventoryLabel = "Add To Inventory", Symbol AddToInventorySymbol = Symbol.Add) {
-        MatImage = new MatImage(DisableView: DisableView, AddToInventoryLabel: AddToInventoryLabel, AddToInventorySymbol: AddToInventorySymbol);
+    public DoubleMatDisplayer(bool DisableView = false) // , string AddToInventoryLabel = "Add To Inventory", Symbol AddToInventorySymbol = Symbol.Add
+    { 
+        MatImage = new MatImage(DisableView: DisableView); // , AddToInventoryLabel: AddToInventoryLabel, AddToInventorySymbol: AddToInventorySymbol
         MatImage.MenuFlyout.Items.Add(ChannelSelectionMenu);
         MatImage.MenuFlyout.Items.Add(HeatmapSelectionMenu);
         NewChannelMenuFlyoutItem(index: 0);
@@ -440,7 +435,7 @@ class DoubleMatDisplayer : IDisposable, IMatDisplayer
         }
     }
     ColormapTypes? _SelectedColorMap;
-    ColormapTypes? SelectedColorMap
+    public ColormapTypes? SelectedColorMap
     {
         get => _SelectedColorMap;
         set
@@ -552,7 +547,6 @@ class DoubleMatDisplayer : IDisposable, IMatDisplayer
 public partial class Extension {
     public static async Task ImShow(this Mat M, string Title, XamlRoot XamlRoot, bool NewWindow = false)
     {
-        MatImage matimg;
         var UI = new Grid
         {
             RowDefinitions =
@@ -567,7 +561,7 @@ public partial class Extension {
                     new DoubleMatDisplayer(DisableView: true)
                     {
                         Mat = M
-                    }.MatImage.Assign(out matimg) :
+                    }.MatImage.Assign(out MatImage matimg) :
                     new MatImage(DisableView: true)
                     {
                         Mat = M
@@ -637,7 +631,7 @@ public partial class Extension {
     public static StackPanel IconAndText(Symbol Icon, string Text)
         => IconAndText(new SymbolIcon(Icon), Text);
     public static StackPanel IconAndText(IconElement Icon, string Text)
-        => new StackPanel
+        => new()
         {
             Orientation = Orientation.Horizontal,
             Children =

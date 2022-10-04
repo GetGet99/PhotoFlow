@@ -18,7 +18,7 @@ namespace PhotoFlow
         private readonly Shape ShapeCommandBar = new ();
         protected override CommandButtonCommandBar CommandBar => ShapeCommandBar;
 
-        public ShapeCommandButton(Border CommandBarPlace) : base(Symbol.Stop, CommandBarPlace)
+        public ShapeCommandButton(Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Stop, CommandBarPlace, LayerContainer, MainScrollViewer)
         {
             ShapeCommandBar.CreateRectangle.Click += delegate
             {

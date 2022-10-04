@@ -1,64 +1,47 @@
-﻿using System.Collections.ObjectModel;
-using Windows.System;
-using Windows.UI.Xaml.Controls;
+﻿#nullable enable
+using System.Collections.ObjectModel;
 
-namespace PhotoFlow
+namespace PhotoFlow;
+
+partial class MainPage
 {
-    partial class MainPage
+    public ButtonCollection Buttons { get; private set; }
+    public class ButtonCollection : ObservableCollection<CommandButtonBase>
     {
-        public ButtonCollection Buttons { get; private set; }
-        public class ButtonCollection : ObservableCollection<CommandButtonBase>
-        {
-            public VariableUpdateAlert<CommandButtonBase> Selection { get; } = new VariableUpdateAlert<CommandButtonBase>();
+        public VariableUpdateAlert<CommandButtonBase?> Selection { get; } = new(null);
 
-            //readonly LayerContainer LayerContainer;
-            public ButtonCollection(LayerContainer LayerContainer, ScrollViewer MainScrollViewer)
-            {
-                Selection.Update += (oldValue, newValue) =>
-                {
-                    oldValue?.Deselect();
-                    newValue?.Select();
-                };
-                //this.LayerContainer = LayerContainer;
-                CollectionChanged += (o, e) =>
-                {
-                    foreach (var nI in e.NewItems)
-                    {
-                        var nI2 = (CommandButtonBase)nI;
-                        nI2.SetLayerContainer(LayerContainer);
-                        nI2.SetScrollViewer(MainScrollViewer);
-                    }
-                };
-            }
-            //public void HotKey(VirtualKey Key)
-            //{
-
-            //}
-            public void InvokeLayerChange()
-            {
-                var val = Selection.GetValue();
-                if (val != null) val.InvokeLayerChange();
-            }
-        }
-        void InitializeCommandButtons()
+        //readonly LayerContainer LayerContainer;
+        public ButtonCollection()
         {
-            Buttons = new ButtonCollection(LayerContainer, MainScrollView)
+            Selection.Update += (oldValue, newValue) =>
             {
-                new MoveCommandButton(CommandBarPlace),
-                new PropertiesCommandButton(CommandBarPlace),
-                new InkingCommandButton(CommandBarPlace),
-                new ImageCommandButton(CommandBarPlace),
-                new TextCommandButton(CommandBarPlace),
-                new ShapeCommandButton(CommandBarPlace),
-            }
-            ;
-            CommandBar.SelectionChanged += (o, e) =>
-            {
-                Buttons.Selection.Value = (CommandButtonBase)CommandBar.SelectedItem;
+                oldValue?.Deselect();
+                newValue?.Select();
             };
-            
-            LayerContainer.SelectionUpdate += (oldVal, newVal) => Buttons.InvokeLayerChange();
-            CommandBar.SelectedIndex = 0;
         }
+        public void InvokeLayerChange()
+        {
+            var val = Selection.GetValue();
+            if (val != null) val.InvokeLayerChange();
+        }
+    }
+    void InitializeCommandButtons()
+    {
+        Buttons = new ButtonCollection()
+        {
+            new MoveCommandButton(CommandBarPlace, LayerContainer, MainScrollView),
+            new PropertiesCommandButton(CommandBarPlace, LayerContainer, MainScrollView),
+            new InkingCommandButton(CommandBarPlace, LayerContainer, MainScrollView),
+            new ImageCommandButton(CommandBarPlace, LayerContainer, MainScrollView),
+            new TextCommandButton(CommandBarPlace, LayerContainer, MainScrollView),
+            new ShapeCommandButton(CommandBarPlace, LayerContainer, MainScrollView),
+        };
+        CommandBar.SelectionChanged += (o, e) =>
+        {
+            Buttons.Selection.Value = (CommandButtonBase)CommandBar.SelectedItem;
+        };
+
+        LayerContainer.SelectionUpdate += (oldVal, newVal) => Buttons.InvokeLayerChange();
+        CommandBar.SelectedIndex = 0;
     }
 }

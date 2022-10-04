@@ -26,7 +26,7 @@ public class ImageCommandButton : CommandButtonBase
     Features.Mat.IMatFeatureApplyable<Mat> MatFeatureApplyable
         => CurrentLayer.Cast<Features.Mat.IMatFeatureApplyable<Mat>>();
 
-    public ImageCommandButton(Border CommandBarPlace) : base(Symbol.Pictures, CommandBarPlace)
+    public ImageCommandButton(Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Pictures, CommandBarPlace, LayerContainer, MainScrollViewer)
     {
         ImageCommandBar.CreateNewLayer.Click += (s, e) =>
         {
