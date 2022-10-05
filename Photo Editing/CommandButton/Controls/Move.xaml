@@ -13,7 +13,6 @@
     <muxc:NumberBox x:Name="TB_X" x:FieldModifier="Public" PlaceholderText="X" Width="100" VerticalAlignment="Center" />
     <TextBlock Text="Y:" Margin="10, 0, 10, 0" VerticalAlignment="Center" />
     <muxc:NumberBox x:Name="TB_Y" x:FieldModifier="Public" PlaceholderText="Y" Width="100" VerticalAlignment="Center" />
-    <Button x:Name="ResetSize" CornerRadius="5" x:FieldModifier="Public" Content="Reset Size" Margin="10, 0, 10, 0" VerticalAlignment="Center" />
     <TextBlock Text="Scale:" Margin="10, 0, 10, 0" VerticalAlignment="Center" />
     <muxc:NumberBox x:Name="TB_S" x:FieldModifier="Public" PlaceholderText="Scale" Width="100" VerticalAlignment="Center" />
     <TextBlock Text="Rotation:" Margin="10, 0, 10, 0" VerticalAlignment="Center" />

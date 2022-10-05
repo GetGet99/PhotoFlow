@@ -20,14 +20,14 @@ namespace PhotoFlow;
 
 public class InkingCommandButton : CommandButtonBase
 {
-    static readonly UISettings UISettings = new();
-    private readonly Inking InkingCommandBar = new();
+    private readonly Inking InkingCommandBar;
     protected override CommandButtonCommandBar CommandBar => InkingCommandBar;
 
     Layer.InkingLayer? InkLayer;
 
-    public InkingCommandButton(Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Edit, CommandBarPlace, LayerContainer, MainScrollViewer)
+    public InkingCommandButton(ScrollViewer CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Edit, CommandBarPlace, LayerContainer, MainScrollViewer)
     {
+        InkingCommandBar = new(LayerContainer.History);
         InkingCommandBar.CreateNewLayer.Click += (s, e) =>
         {
             InkLayer = new Layer.InkingLayer(new Rect(x: -CanvasPadding.Width, y: -CanvasPadding.Height, width: CanvasSize.Width, height: CanvasSize.Height));
@@ -44,27 +44,45 @@ public class InkingCommandButton : CommandButtonBase
                 if (InkingCommandBar.TouchDraw.IsChecked != null)
                     InkLayer.TouchAllowed.Value = InkingCommandBar.TouchDraw.IsChecked.Value;
         };
-        
-        
+        LayerContainer.History.PropertyChanged += delegate
+        {
+            var history = LayerContainer.History;
+            InkingCommandBar.Undo.IsEnabled = history.CanUndo && history.NextUndo?.Tag == InkLayer;
+            InkingCommandBar.Redo.IsEnabled = history.CanRedo && history.NextRedo?.Tag == InkLayer;
+        };
+        InkingCommandBar.Undo.Click += delegate
+        {
+            var history = LayerContainer.History;
+            if (history.CanUndo && history.NextUndo?.Tag == InkLayer)
+                history.Undo();
+        };
+        InkingCommandBar.Redo.Click += delegate
+        {
+            var history = LayerContainer.History;
+            if (history.CanRedo && history.NextRedo?.Tag == InkLayer)
+                history.Redo();
+        };
+
+
     }
-    void RotateRuler(double degree)
-    {
-        var radian = degree / 180 * Math.PI;
-        var ruler = InkingCommandBar.StencilButton.Ruler;
-        var originaltransform = ruler.Transform;
-        var transform = originaltransform;
-        var COS = (float)Math.Cos(radian);
-        var SIN = (float)Math.Sin(radian);
-        transform.Translation += new System.Numerics.Vector2((float)ruler.Length * COS, (float)ruler.Length * SIN);
-        InkingCommandBar.StencilButton.Ruler.Transform = transform;
-    }
+    //void RotateRuler(double degree)
+    //{
+    //    var radian = degree / 180 * Math.PI;
+    //    var ruler = InkingCommandBar.StencilButton.Ruler;
+    //    var originaltransform = ruler.Transform;
+    //    var transform = originaltransform;
+    //    var COS = (float)Math.Cos(radian);
+    //    var SIN = (float)Math.Sin(radian);
+    //    transform.Translation += new System.Numerics.Vector2((float)ruler.Length * COS, (float)ruler.Length * SIN);
+    //    InkingCommandBar.StencilButton.Ruler.Transform = transform;
+    //}
     protected override void Selected() => base.Selected();
     protected override void Deselected()
     {
         base.Deselected();
         InkingCommandBar.StencilButton.IsChecked = false;
     }
-    protected override void LayerChanged(Layer.Layer Layer)
+    protected override void LayerChanged(Layer.Layer? Layer)
     {
         base.LayerChanged(Layer);
         if (Layer != null && Layer.LayerType == PhotoFlow.Layer.Types.Inking)
@@ -106,7 +124,7 @@ public class InkingCommandButton : CommandButtonBase
         }
         InkingCommandBar.PropertiesButton.Layer = null;
     }
-    List<Windows.Foundation.Point> Lasso = new();
+    readonly List<Windows.Foundation.Point> Lasso = new();
     void UnprocessedPressed(InkUnprocessedInput o, PointerEventArgs ev)
     {
         if (InkingCommandBar.LassoTool.IsChecked ?? false)
@@ -116,7 +134,7 @@ public class InkingCommandButton : CommandButtonBase
             Lasso.Add(pos);
             if (InkLayer is not null)
             {
-                InkLayer.ClearInkSlection();
+                InkLayer.ClearInkSelection();
                 InkLayer.SelectionPreviewClear();
                 InkLayer.SelectionPreviewAdd(pos);
             }
@@ -160,24 +178,19 @@ public class InkingCommandButton : CommandButtonBase
             }
         }
         static Thickness DefaultMargin = new (0, 0, 10, 0);
-        public readonly Button CreateNewLayer;
+        public readonly Button CreateNewLayer, Undo, Redo;
         public readonly ToggleButton TouchDraw;
         public readonly InkToolbar InkControl;
         public readonly InkToolbarCustomToolButton LassoTool;
         public readonly PropertiesButton PropertiesButton;
         public InkToolbarStencilButton StencilButton;
-        public Inking()
+        public Inking(History History)
         {
             Children.Add(CreateNewLayer = new Button
             {
-                Content = "Create New Inking Layer",
+                Content = new SymbolIcon(Symbol.Add),
                 Margin = DefaultMargin
-            });
-            Children.Add(TouchDraw = new ToggleButton
-            {
-                Content = "Touch Drawing",
-                Margin = DefaultMargin
-            });
+            }.Edit(x => ToolTipService.SetToolTip(x, "Add New Drawing Layer")));
             var TransparentBrush = new SolidColorBrush(Colors.Transparent);
             Children.Add(InkControl = new InkToolbar
             {
@@ -186,24 +199,90 @@ public class InkingCommandButton : CommandButtonBase
                 Height = 100,
                 Children =
                 {
-                    new InkToolbarBallpointPenButton { VerticalAlignment = VerticalAlignment.Center },
+                    new InkToolbarBallpointPenButton { VerticalAlignment = VerticalAlignment.Center }
+                    .Assign(out var BalloonPen),
                     new InkToolbarPencilButton(),
-                    new InkToolbarHighlighterButton(),
+                    new InkToolbarHighlighterButton().Assign(out var Highlight),
                     (LassoTool = new InkToolbarCustomToolButton
                     {
                         Content = new SymbolIcon((Symbol)0xF408),
                         Background = TransparentBrush
                     }.Edit(x => {
-                        RoutedEventHandler r = (_, _1) => x.Background = x.IsChecked ?? false ? (Brush)App.Current.Resources["CardBackgroundFillColorDefaultBrush"] : TransparentBrush;
+                        void r (object _, RoutedEventArgs _1) => x.Background = x.IsChecked ?? false ? (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"] : TransparentBrush;
                         x.Checked += r;
                         x.Unchecked += r;
                     })),
                     new InkToolbarEraserButton(),
-                    new InkToolbarStencilButton().Assign(out StencilButton)
+                    new InkToolbarStencilButton().Assign(out StencilButton),
+                    new InkToolbarCustomToggleButton
+                    {
+                        Content = new SymbolIcon(Symbol.TouchPointer)
+                    }.Edit(x => ToolTipService.SetToolTip(x, "Touch Drawing")).Assign(out TouchDraw)
                 }
             });
+            BalloonPen.Loaded += delegate
+            {
+                Highlight.Palette.Clear();
+                foreach (var brush in BalloonPen.Palette) Highlight.Palette.Add(brush);
+            };
+            Button CreateColorButton(int index)
+            {
+                var btn = new Button
+                {
+                    Margin = new Thickness(0, 0, 10, 0),
+                    Visibility = Visibility.Collapsed,
+                    Width = 30,
+                    Height = 30,
+                    CornerRadius = new CornerRadius(16)
+                };
+                BalloonPen.Loaded += delegate
+                {
+                    var colorBrush = BalloonPen.Palette[index].CastOrThrow<SolidColorBrush>();
+                    var noFullcolorBrush = new SolidColorBrush(colorBrush.Color) { Opacity = 0.8 };
+                    btn.Background = noFullcolorBrush;
+                    btn.Resources.ThemeDictionaries["Dark"] = new ResourceDictionary
+                    {
+                        ["ButtonBackground"] = noFullcolorBrush,
+                        ["ButtonBackgroundPointerPressed"] = colorBrush,
+                        ["ButtonBackgroundPointerOver"] = colorBrush,
+                    };
+                    btn.Resources.ThemeDictionaries["Light"] = new ResourceDictionary
+                    {
+                        ["ButtonBackground"] = noFullcolorBrush,
+                        ["ButtonBackgroundPointerPressed"] = colorBrush,
+                        ["ButtonBackgroundPointerOver"] = colorBrush,
+                    };
+                    btn.Command = new LambdaCommand(() =>
+                    {
+                        if (InkControl.ActiveTool is InkToolbarPenButton i) i.SelectedBrushIndex = index;
+                    });
+                };
+                
+                InkControl.RegisterPropertyChangedCallback(VisibilityProperty, delegate
+                {
+                    btn.Visibility = InkControl.Visibility;
+                });
+                return btn;
+            }
+            Children.Add(CreateColorButton(0));
+            Children.Add(CreateColorButton(1));
+            Children.Add(CreateColorButton(7));
+            Children.Add(CreateColorButton(10));
+            Children.Add(CreateColorButton(13));
+            Children.Add(CreateColorButton(15));
+            Children.Add(Undo = new Button
+            {
+                Margin = new Thickness(0, 0, 10, 0),
+                Content = new SymbolIcon(Symbol.Undo)
+            });
 
-            Children.Add(PropertiesButton = new PropertiesButton
+            Children.Add(Redo = new Button
+            {
+                Margin = new Thickness(0, 0, 10, 0),
+                Content = new SymbolIcon(Symbol.Redo)
+            });
+
+            Children.Add(PropertiesButton = new PropertiesButton(History)
             {
                 Margin = new Thickness(0, 0, 10, 0)
             }.Edit(x => LayerChanged += () => x.Layer = Layer));

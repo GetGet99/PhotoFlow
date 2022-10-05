@@ -7,6 +7,9 @@ using CSharpUI;
 using ColorPicker = Microsoft.UI.Xaml.Controls.ColorPicker;
 using Windows.UI.Xaml.Media;
 using System.Linq;
+using System.Diagnostics.CodeAnalysis;
+using Windows.Security.Cryptography.Certificates;
+using Windows.UI;
 
 namespace PhotoFlow;
 
@@ -15,7 +18,8 @@ public class TextCommandButton : CommandButtonBase
     private readonly Text TextCommandBar = new();
     protected override CommandButtonCommandBar CommandBar => TextCommandBar;
 
-    public TextCommandButton(Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Font, CommandBarPlace, LayerContainer, MainScrollViewer)
+    HistoryActionMutable<(string Original, string New, LayerContainer LayerContainer, uint LayerId)>? TextChangingHistoryAction = null;
+    public TextCommandButton(ScrollViewer CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Font, CommandBarPlace, LayerContainer, MainScrollViewer)
     {
         TextCommandBar.CreateNewLayer.Click += (_, _1) =>
         {
@@ -23,36 +27,130 @@ public class TextCommandButton : CommandButtonBase
             newLayer.LayerName.Value = "Text Layer";
             AddNewLayer(newLayer);
         };
+
+        TextCommandBar.TextBox.GotFocus += (_, _1) =>
+        {
+            if (CurrentLayer is not Layer.TextLayer Layer) return;
+
+        };
         TextCommandBar.TextBox.TextChanged += (_, _1) =>
         {
-            if (CurrentLayer is Layer.TextLayer Layer)
-                Layer.Text = TextCommandBar.TextBox.Text;
+            if (CurrentLayer is not Layer.TextLayer Layer) return;
+            Layer.Text = TextCommandBar.TextBox.Text;
+            if (TextChangingHistoryAction is null) CreateNewTextChangingHistoryAction(Layer);
+            var (a, b, c, d) = TextChangingHistoryAction.Param;
+            TextChangingHistoryAction.Param = (a, Layer.Text, c, d);
         };
         TextCommandBar.Font.TextChanged += (_, e) =>
         {
             if (e.Reason == AutoSuggestionBoxTextChangeReason.SuggestionChosen)
             {
-                if (CurrentLayer is Layer.TextLayer Layer)
-                    Layer.Font = new FontFamily(TextCommandBar.Font.Text);
+                if (CurrentLayer is not Layer.TextLayer Layer) return;
+                var newFont = new FontFamily(TextCommandBar.Font.Text);
+                LayerContainer.History.NewAction(new HistoryAction<(FontFamily Old, FontFamily New, LayerContainer LayerContainer, uint LayerId)>(
+                    (Layer.Font, newFont, LayerContainer, Layer.LayerId),
+                    Tag: this,
+                    Undo: x =>
+                    {
+                        var (OldFont, _, LayerContainer, LayerId) = x;
+                        if (LayerContainer?.GetLayerFromId(LayerId) is Layer.TextLayer TextLayer)
+                        {
+                            TextLayer.Font = OldFont;
+                        }
+                    },
+                    Redo: x =>
+                    {
+                        var (_, NewFont, LayerContainer, LayerId) = x;
+                        if (LayerContainer?.GetLayerFromId(LayerId) is Layer.TextLayer TextLayer)
+                        {
+                            TextLayer.Font = NewFont;
+                        }
+                    }
+                ));
+                Layer.Font = newFont;
             }
         };
         TextCommandBar.FontSize.ValueChanged += (_, e) =>
         {
-            if (CurrentLayer is Layer.TextLayer Layer)
-                Layer.FontSize = TextCommandBar.FontSize.Value;
+            if (CurrentLayer is not Layer.TextLayer Layer) return;
+            var newSize = TextCommandBar.FontSize.Value;
+            LayerContainer.History.NewAction(new HistoryAction<(double? Old, double? New, LayerContainer LayerContainer, uint LayerId)>(
+                (Layer.FontSize, newSize, LayerContainer, Layer.LayerId),
+                Tag: this,
+                Undo: x =>
+                {
+                    var (OldSize, _, LayerContainer, LayerId) = x;
+                    if (LayerContainer?.GetLayerFromId(LayerId) is Layer.TextLayer TextLayer)
+                    {
+                        TextLayer.FontSize = OldSize;
+                    }
+                },
+                Redo: x =>
+                {
+                    var (_, NewSize, LayerContainer, LayerId) = x;
+                    if (LayerContainer?.GetLayerFromId(LayerId) is Layer.TextLayer TextLayer)
+                    {
+                        TextLayer.FontSize = NewSize;
+                    }
+                }
+            ));
+            Layer.FontSize = newSize;
         };
         TextCommandBar.ColorPicker.ColorChanged += delegate
         {
-            if (CurrentLayer is Layer.TextLayer Layer)
-                Layer.TextColor = TextCommandBar.ColorPicker.Color;
+            if (CurrentLayer is not Layer.TextLayer Layer) return;
+            var newColor = TextCommandBar.ColorPicker.Color;
+            LayerContainer.History.NewAction(new HistoryAction<(Color Old, Color New, LayerContainer LayerContainer, uint LayerId)>(
+                (Layer.TextColor, newColor, LayerContainer, Layer.LayerId),
+                Tag: this,
+                Undo: x =>
+                {
+                    var (OldColor, _, LayerContainer, LayerId) = x;
+                    if (LayerContainer?.GetLayerFromId(LayerId) is Layer.TextLayer TextLayer)
+                    {
+                        TextLayer.TextColor = OldColor;
+                    }
+                },
+                Redo: x =>
+                {
+                    var (_, NewColor, LayerContainer, LayerId) = x;
+                    if (LayerContainer?.GetLayerFromId(LayerId) is Layer.TextLayer TextLayer)
+                    {
+                        TextLayer.TextColor = NewColor;
+                    }
+                }
+            ));
+            Layer.TextColor = newColor;
         };
-        //TextCommandBar.Font.LostFocus += (_, _1) =>
-        //{
-        //    if (CurrentLayer is Layer.TextLayer Layer)
-        //        TextCommandBar.Font.Text = Layer.Font.Source;
-        //};
     }
-    protected override void LayerChanged(Layer.Layer Layer)
+    [MemberNotNull(nameof(TextChangingHistoryAction))]
+    void CreateNewTextChangingHistoryAction(Layer.TextLayer Layer)
+    {
+        TextChangingHistoryAction = new(
+            (Layer.Text ?? "", Layer.Text ?? "", LayerContainer, Layer.LayerId),
+            Tag: this,
+            Undo: x =>
+            {
+                var (oldText, newText, LayerContainer, LayerId) = x;
+                if (LayerContainer?.GetLayerFromId(LayerId) is Layer.TextLayer TextLayer)
+                {
+                    TextLayer.Text = oldText;
+                }
+            },
+            Redo: x =>
+            {
+                var (oldText, newText, LayerContainer, LayerId) = x;
+                if (LayerContainer?.GetLayerFromId(LayerId) is Layer.TextLayer TextLayer)
+                {
+                    TextLayer.Text = newText;
+                }
+            }
+        );
+        LayerContainer.History.NewAction(TextChangingHistoryAction);
+
+
+    }
+    protected override void LayerChanged(Layer.Layer? Layer)
     {
         base.LayerChanged(Layer);
         if (Layer == null) return;
@@ -81,9 +179,9 @@ class Text : CommandButtonCommandBar
         const VerticalAlignment Center = VerticalAlignment.Center;
         Children.Add(new Button
         {
-            Content = "Create New Text Layer",
+            Content = new SymbolIcon(Symbol.Add),
             Margin = new Thickness(0, 0, 10, 0)
-        }.Assign(out CreateNewLayer));
+        }.Edit(x => ToolTipService.SetToolTip(x, "Add New Text Layer")).Assign(out CreateNewLayer));
         Children.Add(
             new StackPanel
             {

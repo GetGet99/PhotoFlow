@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,73 +12,169 @@ using Windows.UI.Xaml;
 using Windows.UI;
 using PhotoFlow.CommandButton.Controls;
 
-namespace PhotoFlow
-{
-    public class ShapeCommandButton : CommandButtonBase
-    {
-        private readonly Shape ShapeCommandBar = new ();
-        protected override CommandButtonCommandBar CommandBar => ShapeCommandBar;
+namespace PhotoFlow;
 
-        public ShapeCommandButton(Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Stop, CommandBarPlace, LayerContainer, MainScrollViewer)
+public class ShapeCommandButton : CommandButtonBase
+{
+    private readonly Shape ShapeCommandBar;
+    protected override CommandButtonCommandBar CommandBar => ShapeCommandBar;
+
+    public ShapeCommandButton(ScrollViewer CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Stop, CommandBarPlace, LayerContainer, MainScrollViewer)
+    {
+        ShapeCommandBar = new Shape(LayerContainer.History);
+        ShapeCommandBar.CreateRectangle.Click += delegate
         {
-            ShapeCommandBar.CreateRectangle.Click += delegate
+            AddNewLayer(new Layer.RectangleLayer
             {
-                AddNewLayer(new Layer.RectangleLayer
-                {
-                    Width = 100,
-                    Height = 100,
-                    Color = Colors.Black
-                }.SetName("Rectangle"));
-            };
-            ShapeCommandBar.CreateEllipse.Click += delegate
+                Width = 100,
+                Height = 100,
+                Color = Colors.Black
+            }.SetName("Rectangle"));
+        };
+        ShapeCommandBar.CreateEllipse.Click += delegate
+        {
+            AddNewLayer(new Layer.EllipseLayer
             {
-                AddNewLayer(new Layer.EllipseLayer
+                Width = 100,
+                Height = 100,
+                Color = Colors.Black
+            }.SetName("Ellipse"));
+        };
+        void SetAcrylic(bool value)
+        {
+            if (CurrentLayer is not Layer.ShapeLayer Layer) return;
+            var newColor = ShapeCommandBar.ColorPicker.Color;
+            LayerContainer.History.NewAction(new HistoryAction<(bool Old, bool New, LayerContainer LayerContainer, uint LayerId)>(
+                (Layer.Acrylic, value, LayerContainer, Layer.LayerId),
+                Tag: this,
+                Undo: x =>
                 {
-                    Width = 100,
-                    Height = 100,
-                    Color = Colors.Black
-                }.SetName("Ellipse"));
-            };
-            ShapeCommandBar.Acrylic.Checked += delegate
-            {
-                if (CurrentLayer is Layer.ShapeLayer ShapeLayer)
+                    var (Old, _, LayerContainer, LayerId) = x;
+                    if (LayerContainer?.GetLayerFromId(LayerId) is Layer.ShapeLayer Layer)
+                    {
+                        Layer.Acrylic = Old;
+                    }
+                },
+                Redo: x =>
                 {
-                    ShapeLayer.Acrylic = true;
-                    ShapeCommandBar.TintOpacityField.Value = ShapeLayer.TintOpacity * 100;
+                    var (_, New, LayerContainer, LayerId) = x;
+                    if (LayerContainer?.GetLayerFromId(LayerId) is Layer.ShapeLayer Layer)
+                    {
+                        Layer.Acrylic = New;
+                    }
                 }
-            };
-            ShapeCommandBar.Acrylic.Unchecked += delegate
-            {
-                if (CurrentLayer is Layer.ShapeLayer ShapeLayer) ShapeLayer.Acrylic = false;
-            };
-            ShapeCommandBar.ColorPicker.ColorChanged += delegate
-            {
-                if (CurrentLayer is Layer.ShapeLayer ShapeLayer) ShapeLayer.Color = ShapeCommandBar.ColorPicker.Color;
-            };
-            
-            ShapeCommandBar.OpacityField.ValueChanged += delegate
-            {
-                if (CurrentLayer is Layer.ShapeLayer ShapeLayer) ShapeLayer.Opacity = ShapeCommandBar.OpacityField.Value / 100;
-            };
-            ShapeCommandBar.TintOpacityField.ValueChanged += delegate
-            {
-                if (CurrentLayer is Layer.ShapeLayer ShapeLayer) ShapeLayer.TintOpacity = ShapeCommandBar.TintOpacityField.Value / 100;
-            };
+            ));
+            Layer.Acrylic = value;
         }
-        protected override void LayerChanged(Layer.Layer Layer)
+        ShapeCommandBar.Acrylic.Checked += delegate
         {
-            base.LayerChanged(Layer);
-            if (Layer == null) return;
-            ShapeCommandBar.LayerEditorControls.Visibility =
-                Layer is Layer.ShapeLayer ? Visibility.Visible : Visibility.Collapsed;
-            if (Layer is Layer.ShapeLayer ShapeLayer)
+            if (CurrentLayer is Layer.ShapeLayer ShapeLayer)
             {
-                ShapeCommandBar.Acrylic.IsChecked = ShapeLayer.Acrylic;
-                ShapeCommandBar.ColorPicker.Color = ShapeLayer.Color;
-                ShapeCommandBar.OpacityField.Value = ShapeLayer.Opacity * 100;
+                SetAcrylic(true);
                 ShapeCommandBar.TintOpacityField.Value = ShapeLayer.TintOpacity * 100;
-                ShapeCommandBar.PropertiesButton.Layer = ShapeLayer;
             }
+        };
+        ShapeCommandBar.Acrylic.Unchecked += delegate
+        {
+            SetAcrylic(false);
+        };
+        ShapeCommandBar.ColorPicker.ColorChanged += delegate
+        {
+            if (CurrentLayer is not Layer.ShapeLayer Layer) return;
+            var newColor = ShapeCommandBar.ColorPicker.Color;
+            LayerContainer.History.NewAction(new HistoryAction<(Color Old, Color New, LayerContainer LayerContainer, uint LayerId)>(
+                (Layer.Color, newColor, LayerContainer, Layer.LayerId),
+                Tag: this,
+                Undo: x =>
+                {
+                    var (OldColor, _, LayerContainer, LayerId) = x;
+                    if (LayerContainer?.GetLayerFromId(LayerId) is Layer.ShapeLayer Layer)
+                    {
+                        Layer.Color = OldColor;
+                    }
+                },
+                Redo: x =>
+                {
+                    var (_, NewColor, LayerContainer, LayerId) = x;
+                    if (LayerContainer?.GetLayerFromId(LayerId) is Layer.ShapeLayer Layer)
+                    {
+                        Layer.Color = NewColor;
+                    }
+                }
+            ));
+            Layer.Color = newColor;
+        };
+        DateTime OpacityTime = DateTime.MinValue, TintOpacityTime = DateTime.MinValue;
+        HistoryActionMutable<(double Old, double New, LayerContainer LayerContainer, uint LayerId)>?
+            OpacityHistoryAction = null, TintOpacityHistoryAction = null;
+        ShapeCommandBar.OpacityField.ValueChanged += delegate
+        {
+            if (CurrentLayer is not Layer.ShapeLayer ShapeLayer) return;
+            if ((DateTime.Now - OpacityTime).TotalSeconds > 2 || OpacityHistoryAction is null)
+            {
+                OpacityHistoryAction = new(
+                    (ShapeLayer.Opacity, ShapeLayer.Opacity, LayerContainer, ShapeLayer.LayerId),
+                    Tag: this,
+                    Undo: x =>
+                    {
+                        var (Old, New, LC, LID) = x;
+                        if (LC.GetLayerFromId(LID) is Layer.ShapeLayer Layer)
+                            Layer.Opacity = Old;
+                    },
+                    Redo: x =>
+                    {
+                        var (Old, New, LC, LID) = x;
+                        if (LC.GetLayerFromId(LID) is Layer.ShapeLayer Layer)
+                            Layer.Opacity = New;
+                    }
+                );
+                LayerContainer.History.NewAction(OpacityHistoryAction);
+            }
+            ShapeLayer.Opacity = ShapeCommandBar.OpacityField.Value / 100;
+            var (a, b, c, d) = OpacityHistoryAction.Param;
+            OpacityHistoryAction.Param = (a, ShapeLayer.Opacity, c, d);
+        };
+        ShapeCommandBar.TintOpacityField.ValueChanged += delegate
+        {
+            if (CurrentLayer is not Layer.ShapeLayer ShapeLayer) return;
+            if ((DateTime.Now - TintOpacityTime).TotalSeconds > 2 || TintOpacityHistoryAction is null)
+            {
+                TintOpacityHistoryAction = new(
+                    (ShapeLayer.TintOpacity, ShapeLayer.TintOpacity, LayerContainer, ShapeLayer.LayerId),
+                    Tag: this,
+                    Undo: x =>
+                    {
+                        var (Old, New, LC, LID) = x;
+                        if (LC.GetLayerFromId(LID) is Layer.ShapeLayer Layer)
+                            Layer.TintOpacity = Old;
+                    },
+                    Redo: x =>
+                    {
+                        var (Old, New, LC, LID) = x;
+                        if (LC.GetLayerFromId(LID) is Layer.ShapeLayer Layer)
+                            Layer.TintOpacity = New;
+                    }
+                );
+                LayerContainer.History.NewAction(TintOpacityHistoryAction);
+            }
+            ShapeLayer.TintOpacity = ShapeCommandBar.OpacityField.Value / 100;
+            var (a, b, c, d) = TintOpacityHistoryAction.Param;
+            TintOpacityHistoryAction.Param = (a, ShapeLayer.TintOpacity, c, d);
+        };
+    }
+    protected override void LayerChanged(Layer.Layer? Layer)
+    {
+        base.LayerChanged(Layer);
+        if (Layer == null) return;
+        ShapeCommandBar.LayerEditorControls.Visibility =
+            Layer is Layer.ShapeLayer ? Visibility.Visible : Visibility.Collapsed;
+        if (Layer is Layer.ShapeLayer ShapeLayer)
+        {
+            ShapeCommandBar.Acrylic.IsChecked = ShapeLayer.Acrylic;
+            ShapeCommandBar.ColorPicker.Color = ShapeLayer.Color;
+            ShapeCommandBar.OpacityField.Value = ShapeLayer.Opacity * 100;
+            ShapeCommandBar.TintOpacityField.Value = ShapeLayer.TintOpacity * 100;
+            ShapeCommandBar.PropertiesButton.Layer = ShapeLayer;
         }
     }
 }

@@ -5,6 +5,7 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
+using PhotoFlow.Layer;
 
 namespace PhotoFlow.CommandButton.Controls;
 
@@ -21,27 +22,27 @@ public class PropertiesButton : Button
             LayerChanged?.Invoke();
         }
     }
-    public PropertiesButton()
+    public PropertiesButton(History History)
     {
         CornerRadius = new CornerRadius(5);
         Content = "Properties";
         Flyout = new Flyout
         {
-            Content = new PropertiesPanel().Edit(x => LayerChanged += () => x.Layer = Layer),
+            Content = new PropertiesPanel(History).Edit(x => LayerChanged += () => x.Layer = Layer),
             Placement = FlyoutPlacementMode.Bottom
         };
     }
 }
 public class PropertiesPanel : StackPanel
 {
-    public event Action? LayerChanged;
+    public event Action? EnvironmentChanged;
     Layer.Layer? _Layer;
     public Layer.Layer? Layer
     {
         get => _Layer; set
         {
             _Layer = value;
-            LayerChanged?.Invoke();
+            EnvironmentChanged?.Invoke();
         }
     }
     void AddChildren(UIElement[] Elements)
@@ -49,8 +50,28 @@ public class PropertiesPanel : StackPanel
         foreach (var element in Elements)
             Children.Add(element);
     }
-    public PropertiesPanel()
+    void RecordNewTransformAction(LayerTransform Old, LayerTransform New)
     {
+        if (!Layer.IsNotNull(out var layer)) return;
+        History.NewAction(new HistoryAction<(LayerTransform Old, LayerTransform New)>(
+            (Old, New),
+            Tag: this,
+            Undo: x =>
+            {
+                layer.Transform = x.Old;
+            },
+            Redo: x =>
+            {
+                layer.Transform = x.New;
+            }
+        ));
+    }
+    readonly History History;
+    public PropertiesPanel(History History)
+    {
+        this.History = History;
+        History.UndoCompleted += () => EnvironmentChanged?.Invoke();
+        History.RedoCompleted += () => EnvironmentChanged?.Invoke();
         RegisterPropertyChangedCallback(OrientationProperty, delegate
         {
             var IsVertical = Orientation == Orientation.Vertical;
@@ -69,52 +90,68 @@ public class PropertiesPanel : StackPanel
             CreatePropertyLayer(
                 FieldName: "X",
                 ValueChanged: x => {
-                    if (Layer != null) Layer.X = x.Value;
-                }, LayerChanged: x => {
+                    if (Layer is null) return;
+                    var oldTransform = Layer.Transform;
+                    Layer.X = x.Value;
+                    RecordNewTransformAction(oldTransform, Layer.Transform);
+                }, EnvironmentChanged: x => {
                     if (Layer != null) x.Value = Layer.X;
                 }
             ),
             CreatePropertyLayer(
                 FieldName: "Y",
                 ValueChanged: x => {
-                    if (Layer != null) Layer.Y = x.Value;
-                }, LayerChanged: x => {
+                    if (Layer is null) return;
+                    var oldTransform = Layer.Transform;
+                    Layer.Y = x.Value;
+                    RecordNewTransformAction(oldTransform, Layer.Transform);
+                }, EnvironmentChanged: x => {
                     if (Layer != null) x.Value = Layer.Y;
                 }
             ),
             CreatePropertyLayer(
                 FieldName: "Scale",
                 ValueChanged: x => {
-                    if (Layer != null) {
-                        Layer.CenterX = Layer.Width / 2;
-                        Layer.CenterY = Layer.Height / 2;
-                        Layer.ScaleX = Layer.ScaleY = x.Value;
-                    }
-                }, LayerChanged: x => {
+                    if (Layer is null) return;
+                    var oldTransform = Layer.Transform;
+                    Layer.CenterX = Layer.Width / 2;
+                    Layer.CenterY = Layer.Height / 2;
+                    Layer.ScaleX = Layer.ScaleY = x.Value;
+                    RecordNewTransformAction(oldTransform, Layer.Transform);
+                }, EnvironmentChanged: x => {
                     if (Layer != null) x.Value = (Layer.ScaleX + Layer.ScaleY) / 2;
                 }
             ),
             CreatePropertyLayer(
                 FieldName: "Rotation",
                 ValueChanged: x => {
-                    if (Layer != null) Layer.Rotation = x.Value;
-                }, LayerChanged: x => {
+                    if (Layer is null) return;
+                    var oldTransform = Layer.Transform;
+                    Layer.Rotation = x.Value;
+                    RecordNewTransformAction(oldTransform, Layer.Transform);
+                }, EnvironmentChanged: x => {
                     if (Layer != null) x.Value = Layer.Rotation;
                 }
             ),
             CreatePropertyLayer(
                 FieldName: "Width",
                 ValueChanged: x => {
-                    if (Layer != null) Layer.Width = x.Value;
-                }, LayerChanged: x => {
+                    if (Layer is null) return;
+                    var oldTransform = Layer.Transform;
+                    Layer.Width = x.Value;
+                    RecordNewTransformAction(oldTransform, Layer.Transform);
+                }, EnvironmentChanged: x => {
                     if (Layer != null) x.Value = Layer.Width;
                 }
             ),
             CreatePropertyLayer(
                 FieldName: "Height",
                 ValueChanged: x => {
-                    if (Layer != null) Layer.Height = x.Value;
-                }, LayerChanged: x => {
+                    if (Layer is null) return;
+                    var oldTransform = Layer.Transform;
+                    Layer.Height = x.Value;
+                    RecordNewTransformAction(oldTransform, Layer.Transform);
+                }, EnvironmentChanged: x => {
                     if (Layer != null) x.Value = Layer.Height;
                 }
             ),
@@ -122,7 +159,7 @@ public class PropertiesPanel : StackPanel
         Orientation = Orientation.Horizontal; // so it updates
         Orientation = Orientation.Vertical;
     }
-    Grid CreatePropertyLayer(string FieldName, Action<NumberBox>? ValueChanged, Action<NumberBox>? LayerChanged)
+    Grid CreatePropertyLayer(string FieldName, Action<NumberBox>? ValueChanged, Action<NumberBox>? EnvironmentChanged)
         => new Grid
         {
             ColumnDefinitions = {
@@ -160,13 +197,17 @@ public class PropertiesPanel : StackPanel
                         VerticalAlignment = VerticalAlignment.Center
                     }.Edit(x =>
                     {
+                        bool LayerChanging = false;
                         x.ValueChanged += delegate
                         {
+                            if (LayerChanging) return;
                             ValueChanged?.Invoke(x);
                         };
-                        this.LayerChanged += delegate
+                        this.EnvironmentChanged += delegate
                         {
-                            LayerChanged?.Invoke(x);
+                            LayerChanging = true;
+                            EnvironmentChanged?.Invoke(x);
+                            LayerChanging = false;
                         };
                         Grid.SetColumn(x, 2);
                     })

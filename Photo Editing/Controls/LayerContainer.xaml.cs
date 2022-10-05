@@ -1,9 +1,13 @@
 ﻿#nullable enable
 using Newtonsoft.Json.Linq;
+using PhotoFlow.Layer;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.UI.Xaml;
@@ -13,19 +17,20 @@ namespace PhotoFlow;
 
 public sealed partial class LayerContainer : Panel
 {
+    public readonly History History = new();
     public void SetScrollViewer(ScrollViewer ScrollViewer)
     {
         this.ScrollViewer = ScrollViewer;
     }
     ScrollViewer? ScrollViewer;
     public float? ZoomFactor => ScrollViewer?.ZoomFactor;
-    public List<Features.IFeatureUndoRedoable> History { get; } = new List<Features.IFeatureUndoRedoable>();
-    public ObservableCollection<Layer.Layer> Layers { get; } = new ObservableCollection<Layer.Layer>();
+    public ObservableCollection2<Layer.Layer> Layers { get; } = new();
     public delegate void SelectionUpdateHandler(int OldIndex, int NewINdex);
     public event SelectionUpdateHandler? SelectionUpdate;
     public VariableUpdateAlert<int> SelectionIndex = new(-1);
     public Layer.Layer? Selection => SelectionIndex == -1 ? null : Layers[SelectionIndex];
     double _PaddingPixel = 0;
+    public Layer.Layer? GetLayerFromId(uint id) => Layers.FirstOrDefault(x => x.LayerId == id);
     public double PaddingPixel
     {
         get => _PaddingPixel; set
@@ -69,6 +74,7 @@ public sealed partial class LayerContainer : Panel
             Height = value.Height + padding;
         }
     }
+    int CurrentSelectionIndex => SelectionIndex.Value;
     public LayerContainer()
     {
         InitializeComponent();
@@ -81,50 +87,172 @@ public sealed partial class LayerContainer : Panel
             }
             SelectionUpdate?.Invoke(oldIndex, newIndex);
         };
-        Layers.CollectionChanged += (o, e) =>
-        {
-            var CurrentSelectionIndex = SelectionIndex.Value;
-            var newIndex = e.NewStartingIndex;
-            var oldIndex = e.OldStartingIndex;
-            switch (e.Action)
+        Layers.Added += Layers_Added;
+        Layers.Removed += Layers_Removed;
+        Layers.Moved += Layers_Moved;
+        Layers.Replaced += Layers_Replaced;
+        Layers.Cleared += Layers_Cleared;
+        Layers.Added += Layers_Added_History;
+        Layers.Removed += Layers_Removed_History;
+        Layers.Moved += Layers_Moved_History;
+        Layers.Replaced += Layers_Replaced_History;
+        Layers.Cleared += Layers_Cleared_History;
+    }
+    void UpdateAllIndex()
+    {
+        foreach (var (i, layer) in Layers.Enumerate())
+            layer.UpdateThisIndex(i);
+    }
+    bool LayerChangingUndoing = false;
+    private void Layers_Cleared_History(Layer.Layer[] Values)
+    {
+        if (LayerChangingUndoing) return;
+        History.NewAction(new HistoryAction<JObject[]>(
+            (from x in Values select x.SaveData(Runtime: true)).ToArray(),
+            Tag: this,
+            Undo: items =>
             {
-                case NotifyCollectionChangedAction.Add:
-                    var layer = Layers[newIndex];
-                    Extension.RunOnUIThread(() => Children.Insert(newIndex, layer.LayerUIElement));
-                    layer.UpdateThisIndex(newIndex);
-                    if (CurrentSelectionIndex >= newIndex) SelectionIndex.Value = CurrentSelectionIndex + 1;
-                    if (SelectionIndex == -1) SelectionIndex.Value = newIndex;
-                    goto UpdateAllIndexes;
-                case NotifyCollectionChangedAction.Remove:
-                    Extension.RunOnUIThread(() => Children.RemoveAt(oldIndex));
-                    if (e.OldItems.Count > 0) e.OldItems[0].Cast<Layer.Layer>().UpdateThisIndex(-1);
-                    if (CurrentSelectionIndex >= oldIndex) SelectionIndex.Value = CurrentSelectionIndex - 1;
-                    goto UpdateAllIndexes;
-                case NotifyCollectionChangedAction.Move:
-                    Extension.RunOnUIThread(() => Children.Move((uint)oldIndex, (uint)newIndex));
-                    Layers[oldIndex].UpdateThisIndex(oldIndex);
-                    Layers[newIndex].UpdateThisIndex(newIndex);
-                    if (CurrentSelectionIndex == oldIndex) SelectionIndex.Value = newIndex;
-                    goto UpdateAllIndexes;
-                case NotifyCollectionChangedAction.Replace:
-                    Layers[oldIndex].UpdateThisIndex(oldIndex);
-                    Extension.RunOnUIThread(() => Children[oldIndex] = Layers[oldIndex].LayerUIElement);
-                    if (e.OldItems.Count > 0) e.OldItems[0].Cast<Layer.Layer>().UpdateThisIndex(-1);
-                    SelectionIndex.InvokeUpdate();
-                    break;
-                case NotifyCollectionChangedAction.Reset:
-                    Extension.RunOnUIThread(() => Children.Clear());
-                    SelectionIndex.Value = -1;
-                    break;
+                LayerChangingUndoing = true;
+                Layers.AddRange(from x in items select LoadLayer(x, Runtime: true));
+                LayerChangingUndoing = false;
+            },
+            Redo: x =>
+            {
+                LayerChangingUndoing = true;
+                Layers.Clear();
+                LayerChangingUndoing = false;
             }
-            goto End;
-        UpdateAllIndexes:
-            foreach (var (i, layer) in Layers.Enumerate())
-                layer.UpdateThisIndex(i);
-            goto End;
-        End:
-            return;
-        };
+        ));
+    }
+
+    private void Layers_Replaced_History(int Index, Layer.Layer OldLayer, Layer.Layer NewLayer)
+    {
+        if (LayerChangingUndoing) return;
+        History.NewAction(new HistoryAction<(int Index, JObject oldObj, JObject newObj)>(
+            (Index, OldLayer.SaveData(), NewLayer.SaveData()),
+            Tag: this,
+            Undo: x =>
+            {
+                LayerChangingUndoing = true;
+                var (Index, oldObj, newObj) = x;
+                Layers[Index] = LoadLayer(oldObj) ?? throw new ArgumentException();
+                LayerChangingUndoing = false;
+            },
+            Redo: x =>
+            {
+                LayerChangingUndoing = true;
+                var (Index, oldObj, newObj) = x;
+                Layers[Index] = LoadLayer(newObj) ?? throw new ArgumentException();
+                LayerChangingUndoing = false;
+            }
+        ));
+    }
+
+    private void Layers_Moved_History(int Index1, int Index2, Layer.Layer Item1, Layer.Layer Item2)
+    {
+        if (LayerChangingUndoing) return;
+        History.NewAction(new HistoryAction<(int Index, int Index2)>(
+            (Index1, Index2),
+            Tag: this,
+            Undo: x =>
+            {
+                LayerChangingUndoing = true;
+                Layers.Move(x.Index, x.Index2); // order doesn't really matter
+                LayerChangingUndoing = false;
+            },
+            Redo: x =>
+            {
+                LayerChangingUndoing = true;
+                Layers.Move(x.Index, x.Index2); // order doesn't really matter
+                LayerChangingUndoing = false;
+            }
+        ));
+    }
+
+    private void Layers_Removed_History(int Index, Layer.Layer Layer)
+    {
+        if (LayerChangingUndoing) return;
+        //History.ClearHistory();
+        History.NewAction(new HistoryAction<(int Index, JObject LayerData)>(
+            (Index, Layer.SaveData(Runtime: true)),
+            Tag: this,
+            Undo: x =>
+            {
+                LayerChangingUndoing = true;
+                var (Index, LayerData) = x;
+                Layers.Insert(Index, LoadLayer(LayerData, Runtime: true) ?? throw new ArgumentException());
+                LayerChangingUndoing = false;
+            },
+            Redo: x =>
+            {
+                LayerChangingUndoing = true;
+                var (Index, LayerData) = x;
+                Layers.RemoveAt(Index);
+                LayerChangingUndoing = false;
+            }
+        ));
+    }
+
+    private void Layers_Added_History(int Index, Layer.Layer Layer)
+    {
+        if (LayerChangingUndoing) return;
+        History.NewAction(new HistoryAction<(int Index, JObject LayerData)>(
+            (Index, Layer.SaveData(Runtime: true)),
+            Tag: this,
+            Undo: x =>
+            {
+                LayerChangingUndoing = true;
+                var (Index, LayerData) = x;
+                Layers.RemoveAt(Index);
+                LayerChangingUndoing = false;
+            },
+            Redo: x =>
+            {
+                LayerChangingUndoing = true;
+                var (Index, LayerData) = x;
+                Layers.Insert(Index, LoadLayer(LayerData, Runtime: true) ?? throw new ArgumentException());
+                LayerChangingUndoing = false;
+            }
+        ));
+    }
+
+    private void Layers_Cleared(Layer.Layer[] Values)
+    {
+        Extension.RunOnUIThread(() => Children.Clear());
+        SelectionIndex.Value = -1;
+    }
+
+    private void Layers_Replaced(int OldIndex, Layer.Layer OldItem, Layer.Layer NewItem)
+    {
+        Extension.RunOnUIThread(() => Children[OldIndex] = Layers[OldIndex].LayerUIElement);
+        OldItem.UpdateThisIndex(-1);
+        NewItem.UpdateThisIndex(OldIndex);
+        SelectionIndex.InvokeUpdate();
+    }
+
+    private void Layers_Moved(int Index1, int Index2, Layer.Layer Item1, Layer.Layer Item2)
+    {
+        Extension.RunOnUIThread(() => Children.Move((uint)Index1, (uint)Index2));
+        Item1.UpdateThisIndex(Index1);
+        Item2.UpdateThisIndex(Index2);
+        if (CurrentSelectionIndex == Index1) SelectionIndex.Value = Index2;
+        UpdateAllIndex();
+    }
+
+    private void Layers_Added(int Index, Layer.Layer Layer)
+    {
+        Extension.RunOnUIThread(() => Children.Insert(Index, Layer.LayerUIElement));
+        Layer.UpdateThisIndex(Index);
+        if (CurrentSelectionIndex >= Index) SelectionIndex.Value = CurrentSelectionIndex + 1;
+        if (SelectionIndex == -1) SelectionIndex.Value = Index;
+        UpdateAllIndex();
+    }
+    private void Layers_Removed(int Index, Layer.Layer Item)
+    {
+        Extension.RunOnUIThread(() => Children.RemoveAt(Index));
+        Item.UpdateThisIndex(-1);
+        if (CurrentSelectionIndex >= Index) SelectionIndex.Value = CurrentSelectionIndex - 1;
+        UpdateAllIndex();
     }
     public void AddNewLayer(Layer.Layer Layer)
     {
@@ -135,6 +263,7 @@ public sealed partial class LayerContainer : Panel
     public async Task<JObject> Save()
     {
         var LayerJson = await Layers.ForEachParallel(x => x.SaveData());
+        if (LayerJson == null) throw new NullReferenceException();
         return new JObject(
             new JProperty("Type", "LayerContainer"),
             new JProperty("Width", Width),
@@ -142,17 +271,17 @@ public sealed partial class LayerContainer : Panel
             new JProperty("Layers", LayerJson)
             );
     }
-    public static Layer.Layer? LoadLayer(JObject JSON)
+    public static Layer.Layer? LoadLayer(JObject JSON, bool Runtime = false)
     {
         var layertype = JSON["LayerType"]?.ToObject<Layer.Types>();
         return layertype switch
         {
             Layer.Types.Background => null, // Deprecated Layer
-            Layer.Types.Inking => new Layer.InkingLayer(JSON),
-            Layer.Types.Mat => new Layer.MatLayer(JSON),
-            Layer.Types.Text => new Layer.TextLayer(JSON),
-            Layer.Types.RectangleShape => new Layer.RectangleLayer(JSON),
-            Layer.Types.EllipseShape => new Layer.EllipseLayer(JSON),
+            Layer.Types.Inking => new Layer.InkingLayer(JSON, Runtime),
+            Layer.Types.Mat => new Layer.MatLayer(JSON, Runtime),
+            Layer.Types.Text => new Layer.TextLayer(JSON, Runtime),
+            Layer.Types.RectangleShape => new Layer.RectangleLayer(JSON, Runtime),
+            Layer.Types.EllipseShape => new Layer.EllipseLayer(JSON, Runtime),
             _ => throw new NotImplementedException(),
         };
     }
@@ -162,10 +291,14 @@ public sealed partial class LayerContainer : Panel
         Height = json["Height"]?.ToObject<double>() ?? throw new FormatException("Error Reading File: Canvas Height does not exist");
         Layers.Clear();
 
-        var layers = json["Layers"]?.ToObject<JObject[]>().ForEachParallel(LoadLayer);
-        if (layers != null)
-            foreach (var Layer in await layers)
-                if (Layer != null) Layers.Add(Layer);
+        var TaskLayers = json["Layers"]?.ToObject<JObject[]>().ForEachParallel(x => LoadLayer(x));
+        if (TaskLayers != null)
+        {
+            var layers = await TaskLayers;
+            if (layers != null)
+                foreach (var Layer in layers)
+                    if (Layer != null) Layers.Add(Layer);
+        }
     }
     public void Clear()
     {
@@ -182,5 +315,96 @@ public sealed partial class LayerContainer : Panel
         }
 
         return finalSize;
+    }
+}
+
+public delegate void OC2AddEventHandler<T>(int Index, T Item);
+public delegate void OC2RemoveEventHandler<T>(int Index, T Item);
+public delegate void OC2ReplaceEventHandler<T>(int Index, T OldItem, T NewItem);
+public delegate void OC2MoveEventHandler<T>(int Index1, int Index2, T Item1, T Item2);
+public delegate void OC2ClearEventHandler<T>(T[] Values);
+
+public class ObservableCollection2<T> : ICollection<T>
+{
+    public enum ChangeType
+    {
+
+    }
+
+    public event OC2AddEventHandler<T>? Adding, Added;
+    public event OC2RemoveEventHandler<T>? Removing, Removed;
+    public event OC2ReplaceEventHandler<T>? Replacing, Replaced;
+    public event OC2MoveEventHandler<T>? Moving, Moved;
+    public event OC2ClearEventHandler<T>? Clearing, Cleared;
+
+    readonly ObservableCollection<T> Values = new();
+    public int Count => Values.Count;
+    public bool IsReadOnly { get; } = false;
+
+    public void Add(T item) => Insert(Count, item);
+    public void AddRange(IEnumerable<T> items)
+    {
+        foreach (var item in items) Add(item);
+    }
+    public void Insert(int index, T item)
+    {
+        Adding?.Invoke(index, item);
+        Values.Insert(index, item);
+        Added?.Invoke(index, item);
+    }
+
+    public void Clear()
+    {
+        var arr = Values.ToArray();
+        Clearing?.Invoke(arr);
+        Values.Clear();
+        Cleared?.Invoke(arr);
+    }
+
+    public bool Contains(T item) => Values.Contains(item);
+    public int IndexOf(T item) => Values.IndexOf(item);
+
+    public void CopyTo(T[] array, int arrayIndex) => Values.CopyTo(array, arrayIndex);
+
+    public void Move(int Index1, int Index2)
+    {
+        var item1 = Values[Index1];
+        var item2 = Values[Index2];
+        Moving?.Invoke(Index1, Index2, item1, item2);
+        Values.Move(Index1, Index2);
+        Moved?.Invoke(Index1, Index2, item1, item2);
+
+    }
+
+    public IEnumerator<T> GetEnumerator() => Values.GetEnumerator();
+
+    public bool Remove(T item)
+    {
+        var idx = IndexOf(item);
+        if (idx == -1) return false;
+        RemoveAt(idx);
+        return true;
+    }
+
+    public void RemoveAt(int index)
+    {
+        var value = Values[index];
+        Removing?.Invoke(index, value);
+        Values.RemoveAt(index);
+        Removed?.Invoke(index, value);
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => Values.GetEnumerator();
+
+    public T this[int index]
+    {
+        get => Values[index];
+        set
+        {
+            var oldItem = Values[index];
+            Replacing?.Invoke(index, oldItem, value);
+            Values[index] = value;
+            Replaced?.Invoke(index, oldItem, value);
+        }
     }
 }

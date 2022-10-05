@@ -317,7 +317,7 @@ class MatImage : IDisposable, IMatDisplayer
             await Mat_.ImShow("View", UIElement.XamlRoot, NewWindow: NewWindow);
     }
     public bool OverwriteAddToInventory = false;
-    public event Action? OnAddToInventory;
+    //public event Action? OnAddToInventory;
     
     public static implicit operator Image(MatImage m) => m.ImageElement;
     public static async Task SaveMat(Mat Mat)

@@ -13,6 +13,7 @@ using Windows.ApplicationModel.DataTransfer;
 using Newtonsoft.Json.Linq;
 using System.IO;
 using Windows.UI.Xaml.Input;
+using PhotoFlow.Layer;
 
 namespace PhotoFlow
 {
@@ -78,34 +79,50 @@ namespace PhotoFlow
             };
             var LayerPreviewPanel = new ReverseStackPanel();
             LayerPanel.PropertiesPane.Content = LayerPreviewPanel;
+
+
             var Layers = LayerContainer.Layers;
-            Layers.CollectionChanged += (o, e) =>
+            void FinalizeUpdate()
             {
-                var newindex = e.NewStartingIndex;
-                var oldindex = e.OldStartingIndex;
-                switch (e.Action)
-                {
-                    case NotifyCollectionChangedAction.Add:
-                        var lp = Layers[newindex].LayerPreview;
-                        Extension.RunOnUIThread(() => LayerPreviewPanel.Children.Insert(newindex, lp));
-                        break;
-                    case NotifyCollectionChangedAction.Remove:
-                        Extension.RunOnUIThread(() => LayerPreviewPanel.Children.RemoveAt(oldindex));
-                        break;
-                    case NotifyCollectionChangedAction.Move:
-                        Extension.RunOnUIThread(() => LayerPreviewPanel.Children.Move((uint)oldindex, (uint)newindex));
-                        break;
-                    case NotifyCollectionChangedAction.Replace:
-                        Extension.RunOnUIThread(() => LayerPreviewPanel.Children[oldindex] = Layers[oldindex].LayerPreview);
-                        break;
-                    case NotifyCollectionChangedAction.Reset:
-                        Extension.RunOnUIThread(() => LayerPreviewPanel.Children.Clear());
-                        break;
-                }
                 foreach (var (i, layer) in Layers.Enumerate())
                     layer.LayerPreview.Background = Constants.TransparentBrush;
                 LayerContainer.SelectionIndex.InvokeUpdate();
-            };
+            }
+            void Layers_Cleared(Layer.Layer[] Values)
+            {
+                Extension.RunOnUIThread(() => LayerPreviewPanel.Children.Clear());
+                FinalizeUpdate();
+            }
+
+            void Layers_Replaced(int Index, Layer.Layer OldItem, Layer.Layer NewItem)
+            {
+                Extension.RunOnUIThread(() => LayerPreviewPanel.Children[Index] = Layers[Index].LayerPreview);
+                FinalizeUpdate();
+            }
+
+            void Layers_Moved(int Index1, int Index2, Layer.Layer Item1, Layer.Layer Item2)
+            {
+                Extension.RunOnUIThread(() => LayerPreviewPanel.Children.Move((uint)Index1, (uint)Index2));
+                FinalizeUpdate();
+            }
+
+            void Layers_Removed(int Index, Layer.Layer Item)
+            {
+                Extension.RunOnUIThread(() => LayerPreviewPanel.Children.RemoveAt(Index));
+                FinalizeUpdate();
+            }
+
+            void Layers_Added(int Index, Layer.Layer Item)
+            {
+                Extension.RunOnUIThread(() => LayerPreviewPanel.Children.Insert(Index, Item.LayerPreview));
+                FinalizeUpdate();
+            }
+
+            Layers.Added += Layers_Added;
+            Layers.Removed += Layers_Removed;
+            Layers.Moved += Layers_Moved;
+            Layers.Replaced += Layers_Replaced;
+            Layers.Cleared += Layers_Cleared;
             LayerPanel.MoveLayerUp.Click += delegate
             {
                 var idx = LayerContainer.SelectionIndex.Value;
@@ -178,7 +195,7 @@ namespace PhotoFlow
             System.Diagnostics.Debug.WriteLine(string.Join(", ", data.AvailableFormats));
             if (data.Contains("GPE"))
             {
-                return LayerContainer.LoadLayer(JObject.Parse(await data.GetStringAsync("GPE")));
+                return LayerContainer.LoadLayer(JObject.Parse(await data.GetStringAsync("GPE")), Runtime: true);
             }
             else if (data.Contains("PNG"))
             {

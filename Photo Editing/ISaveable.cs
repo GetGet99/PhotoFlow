@@ -9,7 +9,7 @@ namespace PhotoFlow
 {
     public interface ISaveable
     {
-        JObject SaveData();
-        void LoadData(JObject bytes);
+        JObject SaveData(bool Runtime = false);
+        void LoadData(JObject bytes, bool Runtime = false);
     }
 }

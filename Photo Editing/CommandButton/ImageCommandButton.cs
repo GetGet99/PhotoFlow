@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using System.IO;
 using System.Linq;
+using PhotoFlow.Layer;
 
 namespace PhotoFlow;
 
@@ -23,23 +24,32 @@ public class ImageCommandButton : CommandButtonBase
     protected override CommandButtonCommandBar CommandBar => ImageCommandBar;
     PhotoToysImportDialog ImportDialog = new();
     //Layer.MatLayer MatLayer => CurrentLayer.LayerType == Layer.Types.Mat ? (Layer.MatLayer)CurrentLayer : null;
-    Features.Mat.IMatFeatureApplyable<Mat> MatFeatureApplyable
-        => CurrentLayer.Cast<Features.Mat.IMatFeatureApplyable<Mat>>();
-
-    public ImageCommandButton(Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Pictures, CommandBarPlace, LayerContainer, MainScrollViewer)
+    
+    public ImageCommandButton(ScrollViewer CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Pictures, CommandBarPlace, LayerContainer, MainScrollViewer)
     {
-        ImageCommandBar.CreateNewLayer.Click += (s, e) =>
-        {
-            var NewMatLayer = new Layer.MatLayer(new Rect(x: -CanvasPadding.Width, y: -CanvasPadding.Height, width: CanvasSize.Width, height: CanvasSize.Height));
-            NewMatLayer.LayerName.Value = "Blank Image Layer";
-            AddNewLayer(NewMatLayer);
-        };
         ImageCommandBar.Invert.Click += (s, e) =>
         {
-            var MatFeatureApplyable = this.MatFeatureApplyable;
-            var feat = new Features.Mat.Invert();
-            MatFeatureApplyable?.ApplyFeature(feat);
-            LayerContainer.History.Add(feat);
+            if (CurrentLayer is not MatLayer MatLayer) return;
+            MatLayer.Mat?.Invert(InPlace: true);
+            MatLayer.UpdateImage();
+            LayerContainer.History.NewAction(new HistoryAction<(LayerContainer LayerContainer, uint LayerId)>(
+                (LayerContainer, MatLayer.LayerId),
+                Tag: this,
+                Undo: x =>
+                {
+                    var (LayerContainer, LayerId) = x;
+                    if (LayerContainer.GetLayerFromId(LayerId) is not MatLayer MatLayer) return;
+                    MatLayer.Mat?.Invert(InPlace: true);
+                    MatLayer.UpdateImage();
+                },
+                Redo: x =>
+                {
+                    var (LayerContainer, LayerId) = x;
+                    if (LayerContainer.GetLayerFromId(LayerId) is not MatLayer MatLayer) return;
+                    MatLayer.Mat?.Invert(InPlace: true);
+                    MatLayer.UpdateImage();
+                }
+            ));
         };
         ImageCommandBar.PhotoToysImport.Click += async delegate
         {
@@ -259,14 +269,9 @@ public class ImageCommandButton : CommandButtonBase
     }
     class ImageBar : CommandButtonCommandBar
     {
-        public Button CreateNewLayer, PhotoToysImport, Invert, Crop;
+        public Button PhotoToysImport, Invert;
         public ImageBar()
         {
-            Children.Add(new Button
-            {
-                Content = "Create New Blank Layer",
-                Margin = new Thickness(0, 0, 10, 0)
-            }.Assign(out CreateNewLayer));
             Children.Add(new Button
             {
                 Content = "PhotoToys Import",
@@ -277,11 +282,6 @@ public class ImageCommandButton : CommandButtonBase
                 Content = "Invert",
                 Margin = new Thickness(0, 0, 10, 0)
             }.Assign(out Invert));
-            Children.Add(new Button
-            {
-                Content = "Crop",
-                Margin = new Thickness(0, 0, 10, 0)
-            }.Assign(out Crop));
         }
     }
 }

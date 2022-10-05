@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PhotoFlow;
 
@@ -25,6 +26,7 @@ partial class MainPage
             if (val != null) val.InvokeLayerChange();
         }
     }
+    [MemberNotNull(nameof(Buttons))]
     void InitializeCommandButtons()
     {
         Buttons = new ButtonCollection()

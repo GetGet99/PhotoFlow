@@ -35,7 +35,7 @@ public partial class Extension
             return rtb;
         } catch (Exception ex)
         {
-            System.Diagnostics.Debugger.Break();
+            //System.Diagnostics.Debugger.Break();
             throw ex;
         }
         

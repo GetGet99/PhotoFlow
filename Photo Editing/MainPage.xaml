@@ -42,11 +42,6 @@
                                 <KeyboardAccelerator Key="N" Modifiers="Control"/>
                             </MenuFlyoutItem.KeyboardAccelerators>
                         </MenuFlyoutItem>
-                        <MenuFlyoutItem Text="New from Clipboard" Icon="Copy" Click="NewFromClipboard">
-                            <MenuFlyoutItem.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="V" Modifiers="Control,Shift"/>
-                            </MenuFlyoutItem.KeyboardAccelerators>
-                        </MenuFlyoutItem>
                         <MenuFlyoutItem Text="Open" Icon="OpenFile" Click="OpenFile" AccessKey="O">
                             <MenuFlyoutItem.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="O" Modifiers="Control"/>
@@ -65,12 +60,12 @@
                     </muxc:MenuBarItem>
 
                     <muxc:MenuBarItem Title="Edit" Margin="0" CornerRadius="10">
-                        <MenuFlyoutItem Text="Undo" Icon="Undo" IsEnabled="False">
+                        <MenuFlyoutItem Text="Undo" Icon="Undo" IsEnabled="{x:Bind LayerContainer.History.CanUndo, Mode=OneWay}" Click="Undo">
                             <MenuFlyoutItem.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="Z" Modifiers="Control"/>
                             </MenuFlyoutItem.KeyboardAccelerators>
                         </MenuFlyoutItem>
-                        <MenuFlyoutItem Text="Redo" Icon="Redo" IsEnabled="False">
+                        <MenuFlyoutItem Text="Redo" Icon="Redo" IsEnabled="{x:Bind LayerContainer.History.CanRedo, Mode=OneWay}" Click="Redo">
                             <MenuFlyoutItem.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="Y" Modifiers="Control"/>
                                 <KeyboardAccelerator Key="Z" Modifiers="Control,Shift"/>
@@ -101,9 +96,6 @@
                                 <KeyboardAccelerator Key="D" Modifiers="Control"/>
                             </MenuFlyoutItem.KeyboardAccelerators>
                         </MenuFlyoutItem>
-                    </muxc:MenuBarItem>
-                    <muxc:MenuBarItem Title="Image" Margin="0" CornerRadius="10">
-                        <MenuFlyoutItem Text="Invert" Click="Invert"/>
                     </muxc:MenuBarItem>
                     <muxc:MenuBarItem Title="View" Margin="0" CornerRadius="10">
                         <MenuFlyoutItem Text="Reset Zoom" Click="ResetZoom">
@@ -153,17 +145,24 @@
                 cg:CustomGrid.GridType="Star"
             />
         </cg:ColumnGrid>
-        
-        
-        <Border
-            x:Name="CommandBarPlace"
+
+        <ScrollViewer
             Grid.Row="1"
             Background="{ThemeResource LayerFillColorDefaultBrush}"
             CornerRadius="8"
             Margin="15,15,15,0"
+            VerticalScrollMode="Disabled"
+            HorizontalScrollMode="Enabled"
+            HorizontalScrollBarVisibility="Auto"
 			cg:CustomGrid.GridType="Auto"
+            x:Name="CommandBarPlace"
         >
-        </Border>
+            <!--<Border
+                
+                Width="1000"
+            >
+            </Border>-->
+        </ScrollViewer>
         <cg:ColumnGrid cg:CustomGrid.GridType="Star">
             <GridView
                 Margin="15"

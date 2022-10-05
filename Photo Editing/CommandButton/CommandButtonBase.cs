@@ -9,7 +9,7 @@ public abstract class CommandButtonBase
     public Symbol Icon { get; private set; }
     protected Size CanvasSize => new(LayerContainer.Width, LayerContainer.Height);
     protected Size CanvasPadding => new(LayerContainer.PaddingPixel, LayerContainer.PaddingPixel);
-    protected readonly Border CommandBarPlace;
+    protected readonly ScrollViewer CommandBarPlace;
     protected Layer.Layer? CurrentLayer { get; private set; }
     protected float? ZoomFactor => ScrollViewer?.ZoomFactor;
     protected abstract CommandButtonCommandBar CommandBar { get; }
@@ -19,7 +19,7 @@ public abstract class CommandButtonBase
         => this.ScrollViewer = ScrollViewer;
     protected LayerContainer LayerContainer { get; private set; }
     protected ScrollViewer ScrollViewer { get; private set; }
-    public CommandButtonBase(Symbol Icon, Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer)
+    public CommandButtonBase(Symbol Icon, ScrollViewer CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer)
     {
         this.CommandBarPlace = CommandBarPlace;
         this.Icon = Icon;
@@ -29,13 +29,13 @@ public abstract class CommandButtonBase
     public void Select() => Selected();
     protected virtual void Selected()
     {
-        CommandBarPlace.Child = CommandBar;
+        CommandBarPlace.Content = CommandBar;
         InvokeLayerChange();
     }
     public void Deselect() => Deselected();
     protected virtual void Deselected()
     {
-        CommandBarPlace.Child = null;
+        CommandBarPlace.Content = null;
         if (CurrentLayer != null)
         {
             RequestRemoveLayerEvent(CurrentLayer);

@@ -49,7 +49,7 @@ public partial class Extension
             yield return (i++, t);
     }
     public static async Task AwaitAllAsync(this Task[] tasks) => await Task.WhenAll(tasks);
-    public static async Task<TOut[]> ForEachParallel<TIn, TOut>(this ICollection<TIn> input, Func<TIn,Task<TOut>> func)
+    public static async Task<TOut[]> ForEachParallel<TIn, TOut>(this ICollection<TIn> input, Func<TIn, Task<TOut>> func)
     {
         var count = input.Count;
         TOut[] arr = new TOut[count];
@@ -64,8 +64,10 @@ public partial class Extension
         await arrTask.AwaitAllAsync();
         return arr;
     }
-    public static async Task<TOut[]> ForEachParallel<TIn, TOut>(this ICollection<TIn> input, Func<TIn, TOut> func)
+    [return: NotNullIfNotNull("input")]
+    public static async Task<TOut[]?> ForEachParallel<TIn, TOut>(this ICollection<TIn>? input, Func<TIn, TOut> func)
     {
+        if (input == null) return null;
         var count = input.Count;
         TOut[] arr = new TOut[count];
         Task[] arrTask = new Task[count];
@@ -76,7 +78,8 @@ public partial class Extension
                 try
                 {
                     arr[i] = func(item);
-                } catch
+                }
+                catch
                 {
                     System.Diagnostics.Debugger.Break();
                 }
@@ -105,7 +108,11 @@ public partial class Extension
     {
         return o as T;
     }
-    public static TChild Cast<TParent,TChild>(this TParent o) where TChild : TParent
+    public static T CastOrThrow<T>(this object o) where T : class
+    {
+        return (T)o;
+    }
+    public static TChild Cast<TParent, TChild>(this TParent o) where TChild : TParent
     {
         if (o == null) throw new NullReferenceException();
         return (TChild)o;
@@ -114,5 +121,28 @@ public partial class Extension
     {
         variable = item;
         return item;
+    }
+    public static bool IsNotNull<T>(this T? obj, [NotNullWhen(true)] out T? var)
+    {
+        if (obj is null)
+        {
+            var = default;
+            return false;
+        } else
+        {
+            var = obj;
+            return true;
+        }
+
+    }
+    // Used By Layer.cs
+    public static T SetName<T>(this T Layer, string Name) where T : Layer.Layer
+    {
+        Layer.LayerName.Value = Name;
+        return Layer;
+    }
+    public static T DeepClone<T>(this T Layer) where T : Layer.Layer
+    {
+        return ((T?)LayerContainer.LoadLayer(Layer.SaveData())) ?? throw new NullReferenceException();
     }
 }

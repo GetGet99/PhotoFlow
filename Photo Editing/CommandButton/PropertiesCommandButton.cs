@@ -14,15 +14,15 @@ namespace PhotoFlow;
 public class PropertiesCommandButton : CommandButtonBase
 {
 
-    private readonly PropertiesCB PropertiesCommandBar = new();
+    private readonly PropertiesCB PropertiesCommandBar;
     protected override CommandButtonCommandBar CommandBar => PropertiesCommandBar;
 
-    public PropertiesCommandButton(Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Repair, CommandBarPlace, LayerContainer, MainScrollViewer)
+    public PropertiesCommandButton(ScrollViewer CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Repair, CommandBarPlace, LayerContainer, MainScrollViewer)
     {
-
+        PropertiesCommandBar = new(LayerContainer.History);
     }
 
-    protected override void LayerChanged(Layer.Layer Layer)
+    protected override void LayerChanged(Layer.Layer? Layer)
     {
         PropertiesCommandBar.Layer = Layer;
         base.LayerChanged(Layer);
@@ -41,10 +41,10 @@ public class PropertiesCommandButton : CommandButtonBase
                 LayerChanged?.Invoke();
             }
         }
-        public PropertiesCB()
+        public PropertiesCB(History History)
         {
 
-            Children.Add(new PropertiesPanel()
+            Children.Add(new PropertiesPanel(History)
             {
                 Orientation = Orientation.Horizontal,
                 VerticalAlignment = VerticalAlignment.Center

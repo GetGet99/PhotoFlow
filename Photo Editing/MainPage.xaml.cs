@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using CSharpUI;
 using System;
 using System.Threading.Tasks;
 using Windows.UI;
@@ -53,10 +52,11 @@ public sealed partial class MainPage : Page
     private void Invert(object _, RoutedEventArgs _1)
     {
         var layer = LayerContainer.Selection;
+        if (layer == null) return;
         if (layer.LayerType == Layer.Types.Mat)
         {
             var matLayer = (Layer.MatLayer)layer;
-            matLayer.Mat.Invert(InPlace: true);
+            matLayer.Mat?.Invert(InPlace: true);
             matLayer.UpdateImage();
         }
     }
@@ -88,6 +88,14 @@ public sealed partial class MainPage : Page
         //appWindowContentFrame
     }
 
+    private void Undo(object _, RoutedEventArgs _1)
+    {
+        LayerContainer.History.Undo();
+    }
 
+    private void Redo(object _, RoutedEventArgs _1)
+    {
+        LayerContainer.History.Redo();
+    }
 }
 

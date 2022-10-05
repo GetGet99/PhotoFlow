@@ -9,7 +9,7 @@ using Microsoft.UI.Xaml.Controls;
 using Windows.System;
 using System.Diagnostics;
 using PhotoFlow.Layer;
-
+using Windows.UI.Xaml.Media;
 namespace PhotoFlow
 {
     public class MoveCommandButton : CommandButtonBase
@@ -17,18 +17,8 @@ namespace PhotoFlow
         private readonly Move MoveCommandBar = new();
         protected override CommandButtonCommandBar CommandBar => MoveCommandBar;
 
-        public MoveCommandButton(Border CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.TouchPointer, CommandBarPlace, LayerContainer, MainScrollViewer)
+        public MoveCommandButton(ScrollViewer CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.TouchPointer, CommandBarPlace, LayerContainer, MainScrollViewer)
         {
-
-            MoveCommandBar.ResetSize.Command = new LambdaCommand(() =>
-            {
-                if (CurrentLayer is Layer.Layer layer)
-                {
-                    layer.X = 0;
-                    layer.Y = 0;
-                    UpdateNumberFromValue();
-                }
-            });
             var ilc = new LambdaCommand(InvokeLayerChange);
             MoveCommandBar.EnableMove.Content = new SymbolIcon((Symbol)0xe7c2);
             MoveCommandBar.EnableMove.Command = ilc;
@@ -45,6 +35,9 @@ namespace PhotoFlow
             MoveCommandBar.TB_Y.ValueChanged += UpdateNumberFromTBEV;
             MoveCommandBar.TB_R.ValueChanged += UpdateNumberFromTBEV;
             MoveCommandBar.TB_S.ValueChanged += UpdateNumberFromTBEV;
+
+            LayerContainer.History.UndoCompleted += UpdateNumberFromValue;
+            LayerContainer.History.RedoCompleted += UpdateNumberFromValue;
         }
 
         void UpdateNumberFromTB()
@@ -52,6 +45,7 @@ namespace PhotoFlow
             if (IsUpdatingNumberFromValue) return;
             var layer = CurrentLayer;
             if (layer == null) return;
+            var oldTransform = layer.Transform;
             layer.X = MoveCommandBar.TB_X.Value;
             layer.Y = MoveCommandBar.TB_Y.Value;
             layer.CenterX = layer.ActualWidth / 2;
@@ -60,6 +54,24 @@ namespace PhotoFlow
             layer.ScaleX = scale;
             layer.ScaleY = scale;
             layer.Rotation = MoveCommandBar.TB_R.Value;
+            var newTransform = layer.Transform;
+            RecordNewTransformAction(oldTransform, newTransform);
+        }
+        void RecordNewTransformAction(LayerTransform Old, LayerTransform New)
+        {
+            if (!CurrentLayer.IsNotNull(out var layer)) return;
+            LayerContainer.History.NewAction(new HistoryAction<(LayerTransform Old, LayerTransform New)>(
+                (Old, New),
+                Tag: this,
+                Undo: x =>
+                {
+                    layer.Transform = x.Old;
+                },
+                Redo: x =>
+                {
+                    layer.Transform = x.New;
+                }
+            ));
         }
         bool IsUpdatingNumberFromValue = false;
         void UpdateNumberFromValue()
@@ -77,11 +89,13 @@ namespace PhotoFlow
         bool ResizingYStart = false;
         bool ResizingXEnd = false;
         bool ResizingYEnd = false;
+        LayerTransform StartManipulationTransform;
         private void ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
         {
-            if ((MoveCommandBar.EnableResize.IsChecked ?? false) && CurrentLayer is not null)
+            if (!CurrentLayer.IsNotNull(out var layer)) return;
+            StartManipulationTransform = layer.Transform;
+            if ((MoveCommandBar.EnableResize.IsChecked ?? false))
             {
-                var layer = CurrentLayer;
                 var ZoomFactor = this.ZoomFactor;
                 var pos = e.Position;
                 var pixelThreshold = 30 / ZoomFactor;
@@ -153,6 +167,11 @@ namespace PhotoFlow
         End:
             e.Handled = true;
             UpdateNumberFromValue();
+        }
+        private void ManipulationCompletedEvent(object sender, ManipulationCompletedRoutedEventArgs e)
+        {
+            if (!CurrentLayer.IsNotNull(out var layer)) return;
+            RecordNewTransformAction(StartManipulationTransform, layer.Transform);
         }
         //private void PointerEntered(object? _, PointerRoutedEventArgs? _1)
         //{
@@ -268,6 +287,7 @@ namespace PhotoFlow
             }
             Element.ManipulationDelta += ManipulationDeltaEvent;
             Element.ManipulationStarted += ManipulationStarted;
+            Element.ManipulationCompleted += ManipulationCompletedEvent;
             //Element.PointerEntered += PointerEntered;
             //Element.PointerExited += PointerExited;
             //Element.PointerCaptureLost += PointerExited;
@@ -287,6 +307,8 @@ namespace PhotoFlow
             Element.ManipulationMode &= ~ManipulationModes.Rotate;
             Element.ManipulationMode |= ManipulationModes.System;
             Element.ManipulationDelta -= ManipulationDeltaEvent;
+            Element.ManipulationStarted -= ManipulationStarted;
+            Element.ManipulationCompleted -= ManipulationCompletedEvent;
             //Element.PointerEntered -= PointerEntered;
             //Element.PointerExited -= PointerExited;
             //Element.PointerCaptureLost -= PointerExited;

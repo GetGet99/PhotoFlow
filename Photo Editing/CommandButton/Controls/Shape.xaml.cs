@@ -9,9 +9,14 @@ namespace PhotoFlow.CommandButton.Controls;
 
 public sealed partial class Shape : CommandButtonCommandBar
 {
-    public Shape()
+    public readonly PropertiesButton PropertiesButton;
+    public Shape(History History)
     {
         InitializeComponent();
+        LayerEditorControls.Children.Add(PropertiesButton = new PropertiesButton(History)
+        {
+            Margin = new Thickness(10, 0, 0, 0)
+        });
         ColorPicker.ColorChanged += delegate
         {
             ColorPickerButton.Background = new SolidColorBrush(ColorPicker.Color);
