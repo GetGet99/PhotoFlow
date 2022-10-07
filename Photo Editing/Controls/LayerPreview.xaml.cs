@@ -9,15 +9,15 @@ namespace PhotoFlow;
 public sealed partial class LayerPreview : IDisposable
 {
     readonly Symbol Eye = (Symbol)0xe7b3;
-    private readonly Layer.Layer Layer;
-    public LayerPreview(Layer.Layer YourLayer)
+    private readonly Layers.Layer Layer;
+    public LayerPreview(Layers.Layer YourLayer)
     {
         Layer = YourLayer;
         InitializeComponent();
         VisibleButton.IsChecked = YourLayer.Visible;
         Image.Source = null;
 
-        if (YourLayer is Layer.MatLayer)
+        if (YourLayer is Layers.MatLayer)
             SendToPhotoToys.Visibility = Visibility.Visible;
         ButtonOverlay.Click += delegate {
             var target = Layer.SelectionIndexUpdateTarget;
@@ -92,7 +92,7 @@ public sealed partial class LayerPreview : IDisposable
 
     private async void Send2PhotoToys(object _, RoutedEventArgs _1)
     {
-        if (Layer is Layer.MatLayer matLayer && matLayer.Mat is OpenCvSharp.Mat m)
+        if (Layer is Layers.MatLayer matLayer && matLayer.Mat is OpenCvSharp.Mat m)
         {
             await m.ImShow("Send To PhotoToys (Drag And Drop The Image)", XamlRoot);
         }

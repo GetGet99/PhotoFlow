@@ -22,7 +22,7 @@ public class PropertiesCommandButton : CommandButtonBase
         PropertiesCommandBar = new(LayerContainer.History);
     }
 
-    protected override void LayerChanged(Layer.Layer? Layer)
+    protected override void LayerChanged(Layers.Layer? Layer)
     {
         PropertiesCommandBar.Layer = Layer;
         base.LayerChanged(Layer);
@@ -32,8 +32,8 @@ public class PropertiesCommandButton : CommandButtonBase
     class PropertiesCB : CommandButtonCommandBar
     {
         public event Action? LayerChanged;
-        Layer.Layer? _Layer;
-        public Layer.Layer? Layer
+        Layers.Layer? _Layer;
+        public Layers.Layer? Layer
         {
             get => _Layer; set
             {

@@ -53,9 +53,9 @@ public sealed partial class MainPage : Page
     {
         var layer = LayerContainer.Selection;
         if (layer == null) return;
-        if (layer.LayerType == Layer.Types.Mat)
+        if (layer.LayerType == Layers.Types.Mat)
         {
-            var matLayer = (Layer.MatLayer)layer;
+            var matLayer = (Layers.MatLayer)layer;
             matLayer.Mat?.Invert(InPlace: true);
             matLayer.UpdateImage();
         }

@@ -160,6 +160,12 @@
     <Compile Include="Extensions\UI2Bitmap.cs" />
     <Compile Include="InkRef.cs" />
     <Compile Include="ISaveable.cs" />
+    <Compile Include="Layers\LayerBase.cs" />
+    <Compile Include="Layers\InkingLayer.cs" />
+    <Compile Include="Layers\MatLayer.cs" />
+    <Compile Include="Layers\Shapes\RectangleLayer.cs" />
+    <Compile Include="Layers\Shapes\ShapeLayer.cs" />
+    <Compile Include="Layers\Shapes\EllipseLayer.cs" />
     <Compile Include="MainPage Partial Class\FeatureImplement\OpenSaveNew.cs" />
     <Compile Include="MainPage Partial Class\Initialize\CommandButton.cs" />
     <Compile Include="Controls\LayerContainer.xaml.cs">
@@ -172,7 +178,7 @@
     <Compile Include="Controls\LayerPreview.xaml.cs">
       <DependentUpon>LayerPreview.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Layers.cs" />
+    <Compile Include="Layers\TextLayer.cs" />
     <Compile Include="MainPage Partial Class\Initialize\Layers.cs" />
     <Compile Include="MainPage Partial Class\Initialize\TitleBarSetup.cs" />
     <Compile Include="MainPage Partial Class\Initialize\ZoomingSystem.cs" />

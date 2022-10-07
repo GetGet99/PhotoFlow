@@ -8,7 +8,7 @@ using PhotoFlow.CommandButton.Controls;
 using Microsoft.UI.Xaml.Controls;
 using Windows.System;
 using System.Diagnostics;
-using PhotoFlow.Layer;
+using PhotoFlow.Layers;
 using Windows.UI.Xaml.Media;
 namespace PhotoFlow
 {
@@ -183,7 +183,7 @@ namespace PhotoFlow
         //}
         private void PointerWheel(object sender, PointerRoutedEventArgs e)
         {
-            if (CurrentLayer is Layer.Layer Layer)
+            if (CurrentLayer is Layers.Layer Layer)
             {
                 double dblDelta_Scroll = e.GetCurrentPoint(Layer.LayerUIElement).Properties.MouseWheelDelta;
                 switch (e.KeyModifiers)
@@ -265,7 +265,7 @@ namespace PhotoFlow
                 CancelWheelIfKeyUp();
             }
         }
-        protected override void RequestAddLayerEvent(Layer.Layer Layer)
+        protected override void RequestAddLayerEvent(Layers.Layer Layer)
         {
             base.RequestAddLayerEvent(Layer);
             var Element = Layer.LayerUIElement;
@@ -297,7 +297,7 @@ namespace PhotoFlow
         }
 
 
-        protected override void RequestRemoveLayerEvent(Layer.Layer Layer)
+        protected override void RequestRemoveLayerEvent(Layers.Layer Layer)
         {
             base.RequestAddLayerEvent(Layer);
             var Element = Layer.LayerUIElement;

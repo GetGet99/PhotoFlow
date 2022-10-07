@@ -10,7 +10,7 @@ public abstract class CommandButtonBase
     protected Size CanvasSize => new(LayerContainer.Width, LayerContainer.Height);
     protected Size CanvasPadding => new(LayerContainer.PaddingPixel, LayerContainer.PaddingPixel);
     protected readonly ScrollViewer CommandBarPlace;
-    protected Layer.Layer? CurrentLayer { get; private set; }
+    protected Layers.Layer? CurrentLayer { get; private set; }
     protected float? ZoomFactor => ScrollViewer?.ZoomFactor;
     protected abstract CommandButtonCommandBar CommandBar { get; }
     public void SetLayerContainer(LayerContainer LayerContainer)
@@ -42,15 +42,15 @@ public abstract class CommandButtonBase
             CurrentLayer = null;
         }
     }
-    protected virtual void RequestRemoveLayerEvent(Layer.Layer Layer) { }
-    protected virtual void RequestAddLayerEvent(Layer.Layer Layer) { }
+    protected virtual void RequestRemoveLayerEvent(Layers.Layer Layer) { }
+    protected virtual void RequestAddLayerEvent(Layers.Layer Layer) { }
     public void InvokeLayerChange() => LayerChanged(LayerContainer.Selection);
-    protected virtual void LayerChanged(Layer.Layer? Layer)
+    protected virtual void LayerChanged(Layers.Layer? Layer)
     {
         if (CurrentLayer != null) RequestRemoveLayerEvent(CurrentLayer);
         CurrentLayer = Layer;
         if (Layer != null) RequestAddLayerEvent(Layer);
     }
-    protected void AddNewLayer(Layer.Layer Layer)
+    protected void AddNewLayer(Layers.Layer Layer)
         => LayerContainer.AddNewLayer(Layer);
 }

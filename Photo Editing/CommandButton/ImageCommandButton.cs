@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using System.IO;
 using System.Linq;
-using PhotoFlow.Layer;
+using PhotoFlow.Layers;
 
 namespace PhotoFlow;
 
@@ -55,7 +55,7 @@ public class ImageCommandButton : CommandButtonBase
         {
             await ImportDialog.ShowAsync();
         };
-        ImportDialog.ImportRequested += x => AddNewLayer(new Layer.MatLayer(x) {
+        ImportDialog.ImportRequested += x => AddNewLayer(new Layers.MatLayer(x) {
             LayerName = {
                 Value = "Imported Layer"
             }

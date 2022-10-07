@@ -1,6 +1,6 @@
 ﻿#nullable enable
 using Newtonsoft.Json.Linq;
-using PhotoFlow.Layer;
+using PhotoFlow.Layers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -24,13 +24,13 @@ public sealed partial class LayerContainer : Panel
     }
     ScrollViewer? ScrollViewer;
     public float? ZoomFactor => ScrollViewer?.ZoomFactor;
-    public ObservableCollection2<Layer.Layer> Layers { get; } = new();
+    public ObservableCollection2<Layers.Layer> Layers { get; } = new();
     public delegate void SelectionUpdateHandler(int OldIndex, int NewINdex);
     public event SelectionUpdateHandler? SelectionUpdate;
     public VariableUpdateAlert<int> SelectionIndex = new(-1);
-    public Layer.Layer? Selection => SelectionIndex == -1 ? null : Layers[SelectionIndex];
+    public Layers.Layer? Selection => SelectionIndex == -1 ? null : Layers[SelectionIndex];
     double _PaddingPixel = 0;
-    public Layer.Layer? GetLayerFromId(uint id) => Layers.FirstOrDefault(x => x.LayerId == id);
+    public Layers.Layer? GetLayerFromId(uint id) => Layers.FirstOrDefault(x => x.LayerId == id);
     public double PaddingPixel
     {
         get => _PaddingPixel; set
@@ -104,7 +104,7 @@ public sealed partial class LayerContainer : Panel
             layer.UpdateThisIndex(i);
     }
     bool LayerChangingUndoing = false;
-    private void Layers_Cleared_History(Layer.Layer[] Values)
+    private void Layers_Cleared_History(Layers.Layer[] Values)
     {
         if (LayerChangingUndoing) return;
         History.NewAction(new HistoryAction<JObject[]>(
@@ -125,7 +125,7 @@ public sealed partial class LayerContainer : Panel
         ));
     }
 
-    private void Layers_Replaced_History(int Index, Layer.Layer OldLayer, Layer.Layer NewLayer)
+    private void Layers_Replaced_History(int Index, Layers.Layer OldLayer, Layers.Layer NewLayer)
     {
         if (LayerChangingUndoing) return;
         History.NewAction(new HistoryAction<(int Index, JObject oldObj, JObject newObj)>(
@@ -148,7 +148,7 @@ public sealed partial class LayerContainer : Panel
         ));
     }
 
-    private void Layers_Moved_History(int Index1, int Index2, Layer.Layer Item1, Layer.Layer Item2)
+    private void Layers_Moved_History(int Index1, int Index2, Layers.Layer Item1, Layers.Layer Item2)
     {
         if (LayerChangingUndoing) return;
         History.NewAction(new HistoryAction<(int Index, int Index2)>(
@@ -169,7 +169,7 @@ public sealed partial class LayerContainer : Panel
         ));
     }
 
-    private void Layers_Removed_History(int Index, Layer.Layer Layer)
+    private void Layers_Removed_History(int Index, Layers.Layer Layer)
     {
         if (LayerChangingUndoing) return;
         //History.ClearHistory();
@@ -193,7 +193,7 @@ public sealed partial class LayerContainer : Panel
         ));
     }
 
-    private void Layers_Added_History(int Index, Layer.Layer Layer)
+    private void Layers_Added_History(int Index, Layers.Layer Layer)
     {
         if (LayerChangingUndoing) return;
         History.NewAction(new HistoryAction<(int Index, JObject LayerData)>(
@@ -216,13 +216,13 @@ public sealed partial class LayerContainer : Panel
         ));
     }
 
-    private void Layers_Cleared(Layer.Layer[] Values)
+    private void Layers_Cleared(Layers.Layer[] Values)
     {
         Extension.RunOnUIThread(() => Children.Clear());
         SelectionIndex.Value = -1;
     }
 
-    private void Layers_Replaced(int OldIndex, Layer.Layer OldItem, Layer.Layer NewItem)
+    private void Layers_Replaced(int OldIndex, Layers.Layer OldItem, Layers.Layer NewItem)
     {
         Extension.RunOnUIThread(() => Children[OldIndex] = Layers[OldIndex].LayerUIElement);
         OldItem.UpdateThisIndex(-1);
@@ -230,7 +230,7 @@ public sealed partial class LayerContainer : Panel
         SelectionIndex.InvokeUpdate();
     }
 
-    private void Layers_Moved(int Index1, int Index2, Layer.Layer Item1, Layer.Layer Item2)
+    private void Layers_Moved(int Index1, int Index2, Layers.Layer Item1, Layers.Layer Item2)
     {
         Extension.RunOnUIThread(() => Children.Move((uint)Index1, (uint)Index2));
         Item1.UpdateThisIndex(Index1);
@@ -239,7 +239,7 @@ public sealed partial class LayerContainer : Panel
         UpdateAllIndex();
     }
 
-    private void Layers_Added(int Index, Layer.Layer Layer)
+    private void Layers_Added(int Index, Layers.Layer Layer)
     {
         Extension.RunOnUIThread(() => Children.Insert(Index, Layer.LayerUIElement));
         Layer.UpdateThisIndex(Index);
@@ -247,14 +247,14 @@ public sealed partial class LayerContainer : Panel
         if (SelectionIndex == -1) SelectionIndex.Value = Index;
         UpdateAllIndex();
     }
-    private void Layers_Removed(int Index, Layer.Layer Item)
+    private void Layers_Removed(int Index, Layers.Layer Item)
     {
         Extension.RunOnUIThread(() => Children.RemoveAt(Index));
         Item.UpdateThisIndex(-1);
         if (CurrentSelectionIndex >= Index) SelectionIndex.Value = CurrentSelectionIndex - 1;
         UpdateAllIndex();
     }
-    public void AddNewLayer(Layer.Layer Layer)
+    public void AddNewLayer(Layers.Layer Layer)
     {
         var Index = SelectionIndex + 1;
         Layers.Insert(Index, Layer);
@@ -271,17 +271,17 @@ public sealed partial class LayerContainer : Panel
             new JProperty("Layers", LayerJson)
             );
     }
-    public static Layer.Layer? LoadLayer(JObject JSON, bool Runtime = false)
+    public static Layers.Layer? LoadLayer(JObject JSON, bool Runtime = false)
     {
-        var layertype = JSON["LayerType"]?.ToObject<Layer.Types>();
+        var layertype = JSON["LayerType"]?.ToObject<Layers.Types>();
         return layertype switch
         {
-            Layer.Types.Background => null, // Deprecated Layer
-            Layer.Types.Inking => new Layer.InkingLayer(JSON, Runtime),
-            Layer.Types.Mat => new Layer.MatLayer(JSON, Runtime),
-            Layer.Types.Text => new Layer.TextLayer(JSON, Runtime),
-            Layer.Types.RectangleShape => new Layer.RectangleLayer(JSON, Runtime),
-            Layer.Types.EllipseShape => new Layer.EllipseLayer(JSON, Runtime),
+            PhotoFlow.Layers.Types.Background => null, // Deprecated Layer
+            PhotoFlow.Layers.Types.Inking => new Layers.InkingLayer(JSON, Runtime),
+            PhotoFlow.Layers.Types.Mat => new Layers.MatLayer(JSON, Runtime),
+            PhotoFlow.Layers.Types.Text => new Layers.TextLayer(JSON, Runtime),
+            PhotoFlow.Layers.Types.RectangleShape => new Layers.RectangleLayer(JSON, Runtime),
+            PhotoFlow.Layers.Types.EllipseShape => new Layers.EllipseLayer(JSON, Runtime),
             _ => throw new NotImplementedException(),
         };
     }

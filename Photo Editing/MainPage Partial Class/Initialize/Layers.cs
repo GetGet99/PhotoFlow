@@ -13,7 +13,7 @@ using Windows.ApplicationModel.DataTransfer;
 using Newtonsoft.Json.Linq;
 using System.IO;
 using Windows.UI.Xaml.Input;
-using PhotoFlow.Layer;
+using PhotoFlow.Layers;
 
 namespace PhotoFlow
 {
@@ -88,31 +88,31 @@ namespace PhotoFlow
                     layer.LayerPreview.Background = Constants.TransparentBrush;
                 LayerContainer.SelectionIndex.InvokeUpdate();
             }
-            void Layers_Cleared(Layer.Layer[] Values)
+            void Layers_Cleared(Layers.Layer[] Values)
             {
                 Extension.RunOnUIThread(() => LayerPreviewPanel.Children.Clear());
                 FinalizeUpdate();
             }
 
-            void Layers_Replaced(int Index, Layer.Layer OldItem, Layer.Layer NewItem)
+            void Layers_Replaced(int Index, Layers.Layer OldItem, Layers.Layer NewItem)
             {
                 Extension.RunOnUIThread(() => LayerPreviewPanel.Children[Index] = Layers[Index].LayerPreview);
                 FinalizeUpdate();
             }
 
-            void Layers_Moved(int Index1, int Index2, Layer.Layer Item1, Layer.Layer Item2)
+            void Layers_Moved(int Index1, int Index2, Layers.Layer Item1, Layers.Layer Item2)
             {
                 Extension.RunOnUIThread(() => LayerPreviewPanel.Children.Move((uint)Index1, (uint)Index2));
                 FinalizeUpdate();
             }
 
-            void Layers_Removed(int Index, Layer.Layer Item)
+            void Layers_Removed(int Index, Layers.Layer Item)
             {
                 Extension.RunOnUIThread(() => LayerPreviewPanel.Children.RemoveAt(Index));
                 FinalizeUpdate();
             }
 
-            void Layers_Added(int Index, Layer.Layer Item)
+            void Layers_Added(int Index, Layers.Layer Item)
             {
                 Extension.RunOnUIThread(() => LayerPreviewPanel.Children.Insert(Index, Item.LayerPreview));
                 FinalizeUpdate();
@@ -162,7 +162,7 @@ namespace PhotoFlow
 
         private async void Paste(object sender, RoutedEventArgs e)
         {
-            if (LayerContainer.Selection is Layer.Layer Layer && Layer.RequestPaste()) 
+            if (LayerContainer.Selection is Layers.Layer Layer && Layer.RequestPaste()) 
                 return;
             var data = Clipboard.GetContent();
             var layer = await data.ReadAsLayerAsync();
@@ -170,13 +170,13 @@ namespace PhotoFlow
         }
         private void Delete(object sender, RoutedEventArgs e)
         {
-            if (LayerContainer.Selection is Layer.Layer Layer && Layer.RequestDelete())
+            if (LayerContainer.Selection is Layers.Layer Layer && Layer.RequestDelete())
                 return;
             LayerContainer.Selection?.DeleteSelf();
         }
         private void Duplicate(object sender, RoutedEventArgs e)
         {
-            if (LayerContainer.Selection is Layer.Layer Layer && Layer.RequestDuplicate())
+            if (LayerContainer.Selection is Layers.Layer Layer && Layer.RequestDuplicate())
                 return;
             var selection = LayerContainer.Selection;
             if (selection == null) return;
@@ -190,7 +190,7 @@ namespace PhotoFlow
         public static async Task<T> GetAsAsync<T>(this DataPackageView dataObject, string format) => (T)(await dataObject.GetDataAsync(format));
         public static Task<MemoryStream> GetStreamAsync(this DataPackageView dataObject, string format) => dataObject.GetAsAsync<MemoryStream>(format);
         public static Task<string> GetStringAsync(this DataPackageView dataObject, string format) => dataObject.GetAsAsync<string>(format);
-        public static async Task<Layer.Layer?> ReadAsLayerAsync(this DataPackageView data)
+        public static async Task<Layers.Layer?> ReadAsLayerAsync(this DataPackageView data)
         {
             System.Diagnostics.Debug.WriteLine(string.Join(", ", data.AvailableFormats));
             if (data.Contains("GPE"))
@@ -202,7 +202,7 @@ namespace PhotoFlow
                 var pngdata = (await data.GetAsAsync<Windows.Storage.Streams.IRandomAccessStream>("PNG")).AsStream();
                 var bytes = new byte[pngdata.Length];
                 pngdata.Read(bytes, 0, bytes.Length);
-                var layer = new Layer.MatLayer(OpenCvSharp.Cv2.ImDecode(bytes, OpenCvSharp.ImreadModes.Unchanged));
+                var layer = new Layers.MatLayer(OpenCvSharp.Cv2.ImDecode(bytes, OpenCvSharp.ImreadModes.Unchanged));
                 layer.LayerName.Value = "Pasted Image";
                 return layer;
             }
@@ -213,7 +213,7 @@ namespace PhotoFlow
                 var bmpdata = openread.AsStream();
                 var bytes = new byte[bmpdata.Length];
                 bmpdata.Read(bytes, 0, bytes.Length);
-                var layer = new Layer.MatLayer(OpenCvSharp.Cv2.ImDecode(bytes, OpenCvSharp.ImreadModes.Unchanged));
+                var layer = new Layers.MatLayer(OpenCvSharp.Cv2.ImDecode(bytes, OpenCvSharp.ImreadModes.Unchanged));
                 layer.LayerName.Value = "Pasted Image";
                 return layer;
             }

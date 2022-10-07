@@ -136,12 +136,12 @@ public partial class Extension
 
     }
     // Used By Layer.cs
-    public static T SetName<T>(this T Layer, string Name) where T : Layer.Layer
+    public static T SetName<T>(this T Layer, string Name) where T : Layers.Layer
     {
         Layer.LayerName.Value = Name;
         return Layer;
     }
-    public static T DeepClone<T>(this T Layer) where T : Layer.Layer
+    public static T DeepClone<T>(this T Layer) where T : Layers.Layer
     {
         return ((T?)LayerContainer.LoadLayer(Layer.SaveData())) ?? throw new NullReferenceException();
     }

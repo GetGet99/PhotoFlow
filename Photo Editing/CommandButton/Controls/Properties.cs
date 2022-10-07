@@ -5,7 +5,7 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
-using PhotoFlow.Layer;
+using PhotoFlow.Layers;
 
 namespace PhotoFlow.CommandButton.Controls;
 
@@ -13,8 +13,8 @@ public class PropertiesButton : Button
 {
     public void ForceUpdateLayer() => LayerChanged?.Invoke();
     public event Action? LayerChanged;
-    Layer.Layer? _Layer;
-    public Layer.Layer? Layer
+    Layers.Layer? _Layer;
+    public Layers.Layer? Layer
     {
         get => _Layer; set
         {
@@ -36,8 +36,8 @@ public class PropertiesButton : Button
 public class PropertiesPanel : StackPanel
 {
     public event Action? EnvironmentChanged;
-    Layer.Layer? _Layer;
-    public Layer.Layer? Layer
+    Layers.Layer? _Layer;
+    public Layers.Layer? Layer
     {
         get => _Layer; set
         {

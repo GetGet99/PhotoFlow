@@ -24,7 +24,7 @@ public class ShapeCommandButton : CommandButtonBase
         ShapeCommandBar = new Shape(LayerContainer.History);
         ShapeCommandBar.CreateRectangle.Click += delegate
         {
-            AddNewLayer(new Layer.RectangleLayer
+            AddNewLayer(new Layers.RectangleLayer
             {
                 Width = 100,
                 Height = 100,
@@ -33,7 +33,7 @@ public class ShapeCommandButton : CommandButtonBase
         };
         ShapeCommandBar.CreateEllipse.Click += delegate
         {
-            AddNewLayer(new Layer.EllipseLayer
+            AddNewLayer(new Layers.EllipseLayer
             {
                 Width = 100,
                 Height = 100,
@@ -42,7 +42,7 @@ public class ShapeCommandButton : CommandButtonBase
         };
         void SetAcrylic(bool value)
         {
-            if (CurrentLayer is not Layer.ShapeLayer Layer) return;
+            if (CurrentLayer is not Layers.ShapeLayer Layer) return;
             var newColor = ShapeCommandBar.ColorPicker.Color;
             LayerContainer.History.NewAction(new HistoryAction<(bool Old, bool New, LayerContainer LayerContainer, uint LayerId)>(
                 (Layer.Acrylic, value, LayerContainer, Layer.LayerId),
@@ -50,7 +50,7 @@ public class ShapeCommandButton : CommandButtonBase
                 Undo: x =>
                 {
                     var (Old, _, LayerContainer, LayerId) = x;
-                    if (LayerContainer?.GetLayerFromId(LayerId) is Layer.ShapeLayer Layer)
+                    if (LayerContainer?.GetLayerFromId(LayerId) is Layers.ShapeLayer Layer)
                     {
                         Layer.Acrylic = Old;
                     }
@@ -58,7 +58,7 @@ public class ShapeCommandButton : CommandButtonBase
                 Redo: x =>
                 {
                     var (_, New, LayerContainer, LayerId) = x;
-                    if (LayerContainer?.GetLayerFromId(LayerId) is Layer.ShapeLayer Layer)
+                    if (LayerContainer?.GetLayerFromId(LayerId) is Layers.ShapeLayer Layer)
                     {
                         Layer.Acrylic = New;
                     }
@@ -68,7 +68,7 @@ public class ShapeCommandButton : CommandButtonBase
         }
         ShapeCommandBar.Acrylic.Checked += delegate
         {
-            if (CurrentLayer is Layer.ShapeLayer ShapeLayer)
+            if (CurrentLayer is Layers.ShapeLayer ShapeLayer)
             {
                 SetAcrylic(true);
                 ShapeCommandBar.TintOpacityField.Value = ShapeLayer.TintOpacity * 100;
@@ -80,7 +80,7 @@ public class ShapeCommandButton : CommandButtonBase
         };
         ShapeCommandBar.ColorPicker.ColorChanged += delegate
         {
-            if (CurrentLayer is not Layer.ShapeLayer Layer) return;
+            if (CurrentLayer is not Layers.ShapeLayer Layer) return;
             var newColor = ShapeCommandBar.ColorPicker.Color;
             LayerContainer.History.NewAction(new HistoryAction<(Color Old, Color New, LayerContainer LayerContainer, uint LayerId)>(
                 (Layer.Color, newColor, LayerContainer, Layer.LayerId),
@@ -88,7 +88,7 @@ public class ShapeCommandButton : CommandButtonBase
                 Undo: x =>
                 {
                     var (OldColor, _, LayerContainer, LayerId) = x;
-                    if (LayerContainer?.GetLayerFromId(LayerId) is Layer.ShapeLayer Layer)
+                    if (LayerContainer?.GetLayerFromId(LayerId) is Layers.ShapeLayer Layer)
                     {
                         Layer.Color = OldColor;
                     }
@@ -96,7 +96,7 @@ public class ShapeCommandButton : CommandButtonBase
                 Redo: x =>
                 {
                     var (_, NewColor, LayerContainer, LayerId) = x;
-                    if (LayerContainer?.GetLayerFromId(LayerId) is Layer.ShapeLayer Layer)
+                    if (LayerContainer?.GetLayerFromId(LayerId) is Layers.ShapeLayer Layer)
                     {
                         Layer.Color = NewColor;
                     }
@@ -109,7 +109,7 @@ public class ShapeCommandButton : CommandButtonBase
             OpacityHistoryAction = null, TintOpacityHistoryAction = null;
         ShapeCommandBar.OpacityField.ValueChanged += delegate
         {
-            if (CurrentLayer is not Layer.ShapeLayer ShapeLayer) return;
+            if (CurrentLayer is not Layers.ShapeLayer ShapeLayer) return;
             if ((DateTime.Now - OpacityTime).TotalSeconds > 2 || OpacityHistoryAction is null)
             {
                 OpacityHistoryAction = new(
@@ -118,13 +118,13 @@ public class ShapeCommandButton : CommandButtonBase
                     Undo: x =>
                     {
                         var (Old, New, LC, LID) = x;
-                        if (LC.GetLayerFromId(LID) is Layer.ShapeLayer Layer)
+                        if (LC.GetLayerFromId(LID) is Layers.ShapeLayer Layer)
                             Layer.Opacity = Old;
                     },
                     Redo: x =>
                     {
                         var (Old, New, LC, LID) = x;
-                        if (LC.GetLayerFromId(LID) is Layer.ShapeLayer Layer)
+                        if (LC.GetLayerFromId(LID) is Layers.ShapeLayer Layer)
                             Layer.Opacity = New;
                     }
                 );
@@ -136,7 +136,7 @@ public class ShapeCommandButton : CommandButtonBase
         };
         ShapeCommandBar.TintOpacityField.ValueChanged += delegate
         {
-            if (CurrentLayer is not Layer.ShapeLayer ShapeLayer) return;
+            if (CurrentLayer is not Layers.ShapeLayer ShapeLayer) return;
             if ((DateTime.Now - TintOpacityTime).TotalSeconds > 2 || TintOpacityHistoryAction is null)
             {
                 TintOpacityHistoryAction = new(
@@ -145,13 +145,13 @@ public class ShapeCommandButton : CommandButtonBase
                     Undo: x =>
                     {
                         var (Old, New, LC, LID) = x;
-                        if (LC.GetLayerFromId(LID) is Layer.ShapeLayer Layer)
+                        if (LC.GetLayerFromId(LID) is Layers.ShapeLayer Layer)
                             Layer.TintOpacity = Old;
                     },
                     Redo: x =>
                     {
                         var (Old, New, LC, LID) = x;
-                        if (LC.GetLayerFromId(LID) is Layer.ShapeLayer Layer)
+                        if (LC.GetLayerFromId(LID) is Layers.ShapeLayer Layer)
                             Layer.TintOpacity = New;
                     }
                 );
@@ -162,13 +162,13 @@ public class ShapeCommandButton : CommandButtonBase
             TintOpacityHistoryAction.Param = (a, ShapeLayer.TintOpacity, c, d);
         };
     }
-    protected override void LayerChanged(Layer.Layer? Layer)
+    protected override void LayerChanged(Layers.Layer? Layer)
     {
         base.LayerChanged(Layer);
         if (Layer == null) return;
         ShapeCommandBar.LayerEditorControls.Visibility =
-            Layer is Layer.ShapeLayer ? Visibility.Visible : Visibility.Collapsed;
-        if (Layer is Layer.ShapeLayer ShapeLayer)
+            Layer is Layers.ShapeLayer ? Visibility.Visible : Visibility.Collapsed;
+        if (Layer is Layers.ShapeLayer ShapeLayer)
         {
             ShapeCommandBar.Acrylic.IsChecked = ShapeLayer.Acrylic;
             ShapeCommandBar.ColorPicker.Color = ShapeLayer.Color;

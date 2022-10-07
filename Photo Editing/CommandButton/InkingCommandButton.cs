@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using CSharpUI;
-using OpenCvSharp;
 using PhotoFlow.CommandButton.Controls;
 using System;
 using Windows.UI.Xaml.Controls;
@@ -23,14 +22,14 @@ public class InkingCommandButton : CommandButtonBase
     private readonly Inking InkingCommandBar;
     protected override CommandButtonCommandBar CommandBar => InkingCommandBar;
 
-    Layer.InkingLayer? InkLayer;
+    Layers.InkingLayer? InkLayer;
 
     public InkingCommandButton(ScrollViewer CommandBarPlace, LayerContainer LayerContainer, ScrollViewer MainScrollViewer) : base(Symbol.Edit, CommandBarPlace, LayerContainer, MainScrollViewer)
     {
         InkingCommandBar = new(LayerContainer.History);
         InkingCommandBar.CreateNewLayer.Click += (s, e) =>
         {
-            InkLayer = new Layer.InkingLayer(new Rect(x: -CanvasPadding.Width, y: -CanvasPadding.Height, width: CanvasSize.Width, height: CanvasSize.Height));
+            InkLayer = new Layers.InkingLayer(new Windows.Foundation.Rect(x: -CanvasPadding.Width, y: -CanvasPadding.Height, width: CanvasSize.Width, height: CanvasSize.Height));
             InkLayer.LayerName.Value = "Inking Layer";
             InkLayer.DrawingAllowed.Value = true;
             if (InkingCommandBar.TouchDraw.IsChecked != null)
@@ -82,12 +81,12 @@ public class InkingCommandButton : CommandButtonBase
         base.Deselected();
         InkingCommandBar.StencilButton.IsChecked = false;
     }
-    protected override void LayerChanged(Layer.Layer? Layer)
+    protected override void LayerChanged(Layers.Layer? Layer)
     {
         base.LayerChanged(Layer);
-        if (Layer != null && Layer.LayerType == PhotoFlow.Layer.Types.Inking)
+        if (Layer != null && Layer.LayerType == PhotoFlow.Layers.Types.Inking)
         {
-            InkLayer = (Layer.InkingLayer)Layer;
+            InkLayer = (Layers.InkingLayer)Layer;
             InkingCommandBar.InkControl.Visibility = Visibility.Visible;
             InkingCommandBar.PropertiesButton.Visibility = Visibility.Visible;
         }
@@ -97,12 +96,12 @@ public class InkingCommandButton : CommandButtonBase
             InkingCommandBar.PropertiesButton.Visibility = Visibility.Collapsed;
         }
     }
-    protected override void RequestAddLayerEvent(Layer.Layer Layer)
+    protected override void RequestAddLayerEvent(Layers.Layer Layer)
     {
         base.RequestAddLayerEvent(Layer);
-        if (Layer != null && Layer.LayerType == PhotoFlow.Layer.Types.Inking)
+        if (Layer != null && Layer.LayerType == PhotoFlow.Layers.Types.Inking)
         {
-            var InkLayer = (Layer.InkingLayer)Layer;
+            var InkLayer = (Layers.InkingLayer)Layer;
             InkLayer.DrawingAllowed.Value = true;
             InkingCommandBar.InkControl.TargetInkCanvas = InkLayer.InkCanvas;
             InkingCommandBar.PropertiesButton.Layer = Layer;
@@ -111,12 +110,12 @@ public class InkingCommandButton : CommandButtonBase
             InkLayer.InkCanvas!.InkPresenter.UnprocessedInput.PointerReleased += UnprocessedReleased;
         }
     }
-    protected override void RequestRemoveLayerEvent(Layer.Layer Layer)
+    protected override void RequestRemoveLayerEvent(Layers.Layer Layer)
     {
         base.RequestRemoveLayerEvent(Layer);
-        if (Layer != null && Layer.LayerType == PhotoFlow.Layer.Types.Inking)
+        if (Layer != null && Layer.LayerType == PhotoFlow.Layers.Types.Inking)
         {
-            var InkLayer = (Layer.InkingLayer)Layer;
+            var InkLayer = (Layers.InkingLayer)Layer;
             InkLayer.DrawingAllowed.Value = false;
             InkLayer.InkCanvas!.InkPresenter.UnprocessedInput.PointerPressed -= UnprocessedPressed;
             InkLayer.InkCanvas!.InkPresenter.UnprocessedInput.PointerMoved -= UnprocessedMove;
@@ -168,8 +167,8 @@ public class InkingCommandButton : CommandButtonBase
     {
         public void ForceUpdateLayer() => LayerChanged?.Invoke();
         public event Action? LayerChanged;
-        Layer.Layer? _Layer;
-        public Layer.Layer? Layer
+        Layers.Layer? _Layer;
+        public Layers.Layer? Layer
         {
             get => _Layer; set
             {

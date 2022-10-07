@@ -34,7 +34,7 @@ partial class MainPage
     private async void InsertFile(object _, RoutedEventArgs _1)
     {
         var mat = await FileManagement.OpenNewImageFile();
-        var layer = new Layer.MatLayer(mat);
+        var layer = new Layers.MatLayer(mat);
         layer.LayerName.Value = "Inserted Image";
         LayerContainer.AddNewLayer(layer);
     }
@@ -80,7 +80,7 @@ partial class MainPage
     void NewImage(Windows.UI.Color Color, OpenCvSharp.Size CanvasDimension)
     {
         Size Size = new(CanvasDimension.Width, CanvasDimension.Height);
-        var layer = new Layer.RectangleLayer()
+        var layer = new Layers.RectangleLayer()
         {
             Color = Color,
             Width = Size.Width,
@@ -89,7 +89,7 @@ partial class MainPage
         layer.LayerName.Value = "Background";
         NewImage(layer);
     }
-    void NewImage(Layer.Layer Layer)
+    void NewImage(Layers.Layer Layer)
     {
         CanvasDimension = new OpenCvSharp.Size(Layer.Width, Layer.Height);
 
@@ -111,7 +111,7 @@ partial class MainPage
         LayerContainer.ImageSize = Size;
 
         LayerContainer.Clear();
-        var layer = new Layer.MatLayer(Image);
+        var layer = new Layers.MatLayer(Image);
         layer.LayerName.Value = "Background";
         LayerContainer.AddNewLayer(layer);
     }
