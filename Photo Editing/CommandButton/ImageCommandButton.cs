@@ -32,7 +32,7 @@ public class ImageCommandButton : CommandButtonBase
             if (CurrentLayer is not MatLayer MatLayer) return;
             MatLayer.Mat?.Invert(InPlace: true);
             MatLayer.UpdateImage();
-            LayerContainer.History.NewAction(new HistoryAction<(LayerContainer LayerContainer, uint LayerId)>(
+            MatLayer.NewHistoryAction(LayerContainer.History, new HistoryAction<(LayerContainer LayerContainer, uint LayerId)>(
                 (LayerContainer, MatLayer.LayerId),
                 Tag: this,
                 Undo: x =>

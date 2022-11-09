@@ -4,11 +4,13 @@ using Windows.UI;
 using Newtonsoft.Json.Linq;
 using Windows.UI.Xaml.Shapes;
 using System.Diagnostics.CodeAnalysis;
+using Windows.UI.Xaml;
 
 namespace PhotoFlow.Layers;
 
 public class EllipseLayer : ShapeLayer
 {
+    public override UIElement UIElementDirect => Ellipse;
     public override Types LayerType { get; } = Types.EllipseShape;
     Ellipse Ellipse { get; set; }
     Brush? _BackgroundBrush;

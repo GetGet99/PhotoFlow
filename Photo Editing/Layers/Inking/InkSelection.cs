@@ -59,7 +59,7 @@ partial class InkingLayer
             SelectionRectangle.ManipulationCompleted += delegate
             {
                 if (LayerContainer is not null)
-                    History?.NewAction(new HistoryAction<(LayerContainer LayerContainer, uint LayerId, InkRef[] InkRef, Point Dm)>(
+                    NewHistoryAction(LayerContainer.History, new HistoryAction<(LayerContainer LayerContainer, uint LayerId, InkRef[] InkRef, Point Dm)>(
                         (LayerContainer, LayerId, selectedInks, deltaManipulation),
                         Tag: this,
                         Undo: x =>

@@ -5,6 +5,8 @@ namespace PhotoFlow;
 
 public sealed partial class LayerPane : Grid
 {
+    Symbol UpArrow => (Symbol)0xE971;
+    Symbol DownArrow => (Symbol)0xE972;
     public LayerPane()
     {
         InitializeComponent();

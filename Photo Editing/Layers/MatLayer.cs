@@ -12,7 +12,7 @@ namespace PhotoFlow.Layers;
 
 public class MatLayer : Layer
 {
-
+    public override UIElement UIElementDirect => Image;
     public override Types LayerType { get; } = Types.Mat;
 
     public Mat? Mat { get; set; }
@@ -65,7 +65,7 @@ public class MatLayer : Layer
     }
 #pragma warning restore CS8774
 
-    protected override JObject OnDataSaving()
+    protected override JObject OnDataSaving(bool Runtime)
     {
         return Mat is null ? new JObject() : new JObject(
             new JProperty("Image", Mat.ToBytes())

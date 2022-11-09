@@ -4,7 +4,7 @@
   <PropertyGroup>
     <LangVersion>10.0</LangVersion>
     <Nullable>enable</Nullable>
-    <AppxBundlePlatforms>x86|x64|arm|arm64</AppxBundlePlatforms>
+    <AppxBundlePlatforms>x86</AppxBundlePlatforms>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProjectGuid>{AEFACE6F-145C-4C3C-BD27-90CC3EE59AA7}</ProjectGuid>
@@ -160,9 +160,11 @@
     <Compile Include="Extensions\UI2Bitmap.cs" />
     <Compile Include="InkRef.cs" />
     <Compile Include="ISaveable.cs" />
+    <Compile Include="Layers\Inking\InkSelection.cs" />
     <Compile Include="Layers\LayerBase.cs" />
-    <Compile Include="Layers\InkingLayer.cs" />
+    <Compile Include="Layers\Inking\InkingLayer.cs" />
     <Compile Include="Layers\MatLayer.cs" />
+    <Compile Include="Layers\ShadowCloneLayer.cs" />
     <Compile Include="Layers\Shapes\RectangleLayer.cs" />
     <Compile Include="Layers\Shapes\ShapeLayer.cs" />
     <Compile Include="Layers\Shapes\EllipseLayer.cs" />
@@ -308,13 +310,13 @@
       <Version>1.0.2</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
-      <Version>6.2.13</Version>
+      <Version>6.2.14</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Toolkit.Uwp.UI">
       <Version>7.1.2</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.UI.Xaml">
-      <Version>2.8.0-prerelease.220413001</Version>
+      <Version>2.8.1</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>

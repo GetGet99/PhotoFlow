@@ -24,7 +24,8 @@ public enum Types
     Inking,
     Text,
     RectangleShape,
-    EllipseShape
+    EllipseShape,
+    ShadowClone
 }
 public interface ILayerTyping
 {
@@ -46,8 +47,10 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
 {
     private static uint NextId = 0;
     public uint LayerId { get; private set; }
+    public void RequestSetNewId() => LayerId = NextId++;
     protected static readonly UISettings UISettings = new();
     public Grid LayerUIElement { get; private set; }
+    public abstract UIElement UIElementDirect { get; }
     public History? History => LayerContainer?.History;
     static Layer()
     {
@@ -139,17 +142,20 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
         set
         {
             LayerUIElement.Width = value;
+            SizeChanged?.Invoke();
             //foreach (var child in LayerUIElement.Children)
             //    if (child is FrameworkElement element)
             //        element.Width = value;
         }
     }
+    public event Action? SizeChanged;
     public double Height
     {
         get => LayerUIElement.Height;//(LayerUIElement.Children[0] as FrameworkElement).Height;
         set
         {
             LayerUIElement.Height = value;
+            SizeChanged?.Invoke();
             //foreach (var child in LayerUIElement.Children)
             //    if (child is FrameworkElement element)
             //        element.Height = value;
@@ -162,12 +168,13 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
     }
     public JObject SaveData(bool Runtime = false)
     {
-        var save = OnDataSaving();
+        var save = OnDataSaving(Runtime);
         double X = 0, Y = 0,
             Width = 0, Height = 0,
             Rotation = 0,
             ScaleX = 0, ScaleY = 0,
             CenterX = 0, CenterY = 0;
+        int? Index = null;
         bool Visible = true;
         Extension.RunOnUIThread(delegate
         {
@@ -181,8 +188,9 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
             CenterX = this.CenterX;
             CenterY = this.CenterY;
             Visible = this.Visible;
+            Index = LayerContainer?.Layers.IndexOf(this);
         });
-        return new JObject(
+        var obj = new JObject(
             new JProperty("LayerName", LayerName.Value),
             new JProperty("LayerType", LayerType),
             new JProperty("CenterPoint", new double[] { CenterX, CenterY }),
@@ -193,9 +201,19 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
             new JProperty("Rotation", Rotation),
             new JProperty("Scale", new double[] { ScaleX, ScaleY }),
             new JProperty("Visible", Visible),
-            new JProperty("Runtime", LayerId),
             new JProperty("AdditionalData", save)
         );
+        if (Runtime)
+            obj.Add("Runtime",
+                new JObject(
+                    new JProperty("LayerId", LayerId)
+                )
+            );
+        else
+            obj.Add(
+                "LayerId", Index ?? -1
+            );
+        return obj;
     }
 
     public void LoadData(JObject json, bool Runtime = false)
@@ -212,8 +230,11 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
         var Visible = json["Visible"]?.ToObject<bool>();
         if (Runtime)
         {
-            var RuntimeValue = json["Runtime"]?.ToObject<uint>();
-            if (RuntimeValue is uint val) LayerId = val;
+            var RuntimeValue = json["Runtime"];
+            if (RuntimeValue?["LayerId"]?.ToObject<uint>() is uint val) LayerId = val;
+        } else
+        {
+            if (json["LayerId"]?.ToObject<uint>() is uint val) LayerId = val;
         }
         var Task = Extension.RunOnUIThreadAsync(() =>
         {
@@ -251,7 +272,7 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
         Index = newIndex;
     }
 
-    protected abstract JObject OnDataSaving();
+    protected abstract JObject OnDataSaving(bool Runtime);
     protected abstract void OnDataLoading(JObject storage, Task MainLoadingTask);
 
     public Control? Control { get; private set; }
@@ -307,8 +328,9 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
     {
         UpdatePreview();
     }
+    public event Action? OnLayerPreviewUpdate;
     [RunOnUIThread]
-    protected async Task UpdatePreviewAsync()
+    public async Task UpdatePreviewAsync()
     {
         try
         {
@@ -317,7 +339,8 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
                 {
                     try
                     {
-                        LayerPreview.PreviewImage = await LayerUIElement.ToRenderTargetBitmapAsync();
+                        LayerPreview.PreviewImage = await UIElementDirect.ToRenderTargetBitmapAsync();
+                        OnLayerPreviewUpdate?.Invoke();
                     }
                     catch
                     {
@@ -362,6 +385,15 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
             Dispose();
         }
     }
+    public void InsertAboveSelf(Layer NewLayer)
+    {
+        var lc = LayerContainer;
+        if (lc != null)
+        {
+            var index = lc.Layers.IndexOf(this);
+            if (index != -1) lc.Layers.Insert(index+1, NewLayer);
+        }
+    }
     protected void RemoveSelf()
     {
         var lc = LayerContainer;
@@ -372,7 +404,13 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
         }
     }
     public void DeleteSelf() => RemoveSelf();
-    public void Duplicate() => LayerContainer?.AddNewLayer(this.DeepClone());
+    public void Duplicate()
+    {
+        var newlayer = RequestDuplicateLayer();
+        LayerContainer?.AddNewLayer(newlayer);
+        newlayer.FinalizeLoad();
+    }
+    protected virtual Layer RequestDuplicateLayer() => this.DeepClone();
     async Task CopyAsync(DataPackageOperation Operation)
     {
         var data = new DataPackage
@@ -436,5 +474,17 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
     public override string ToString()
     {
         return $"[{GetType().Name}] Id = {LayerId}";
+    }
+
+    public virtual void FinalizeLoad() { }
+    public void NewHistoryAction(IHistoryAction Action)
+    {
+        if (History.IsNotNull(out var his))
+            NewHistoryAction(his, Action);
+    }
+    public async void NewHistoryAction(History History, IHistoryAction Action)
+    {
+        History.NewAction(Action);
+        await UpdatePreviewAsync();
     }
 }

@@ -4,11 +4,13 @@ using Windows.UI;
 using Newtonsoft.Json.Linq;
 using Windows.UI.Xaml.Shapes;
 using System.Diagnostics.CodeAnalysis;
+using Windows.UI.Xaml;
 
 namespace PhotoFlow.Layers;
 
 public class RectangleLayer : ShapeLayer
 {
+    public override UIElement UIElementDirect => Rectangle;
     public override Types LayerType { get; } = Types.RectangleShape;
     Rectangle Rectangle { get; set; }
     Brush? _BackgroundBrush;

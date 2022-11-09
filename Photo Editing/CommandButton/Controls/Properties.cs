@@ -53,7 +53,7 @@ public class PropertiesPanel : StackPanel
     void RecordNewTransformAction(LayerTransform Old, LayerTransform New)
     {
         if (!Layer.IsNotNull(out var layer)) return;
-        History.NewAction(new HistoryAction<(LayerTransform Old, LayerTransform New)>(
+        layer.NewHistoryAction(History, new HistoryAction<(LayerTransform Old, LayerTransform New)>(
             (Old, New),
             Tag: this,
             Undo: x =>

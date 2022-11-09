@@ -21,11 +21,11 @@ public partial class Extension
         {
             RenderTargetBitmap rtb = new();
             System.Numerics.Vector2 ActualSize = new();
-            await element.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            await RunOnUIThreadAsync(() =>
             {
-                var scale = element.Scale;
-                var rotation = element.Rotation;
-                var center = element.CenterPoint;
+                //var scale = element.Scale;
+                //var rotation = element.Rotation;
+                //var center = element.CenterPoint;
                 ActualSize = element.ActualSize;
                 //await rtb.RenderAsync(element);
                 //await rtb.RenderAsync(element, (int)element.ActualSize.X, (int)element.ActualSize.Y);

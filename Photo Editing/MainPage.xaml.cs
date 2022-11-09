@@ -14,7 +14,14 @@ public sealed partial class MainPage : Page
 {
     public MainPage()
     {
-        SetValue(Microsoft.UI.Xaml.Controls.BackdropMaterial.ApplyToRootOrPageBackgroundProperty, true);
+        try
+        {
+            SetValue(Microsoft.UI.Xaml.Controls.BackdropMaterial.ApplyToRootOrPageBackgroundProperty, true);
+        }
+        catch
+        {
+
+        }
         RotateCommand = new(x =>
         {
             LayerContaineCompositeTransformr.CenterX = LayerContainerBackground.ActualWidth / 2;

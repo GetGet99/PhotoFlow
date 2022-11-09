@@ -1,16 +1,10 @@
 ﻿#nullable enable
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Input;
-using Windows.Devices.Input;
-using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI;
 using PhotoFlow.CommandButton.Controls;
+using PhotoFlow.Layers;
 
 namespace PhotoFlow;
 
@@ -24,7 +18,7 @@ public class ShapeCommandButton : CommandButtonBase
         ShapeCommandBar = new Shape(LayerContainer.History);
         ShapeCommandBar.CreateRectangle.Click += delegate
         {
-            AddNewLayer(new Layers.RectangleLayer
+            AddNewLayer(new RectangleLayer
             {
                 Width = 100,
                 Height = 100,
@@ -33,7 +27,7 @@ public class ShapeCommandButton : CommandButtonBase
         };
         ShapeCommandBar.CreateEllipse.Click += delegate
         {
-            AddNewLayer(new Layers.EllipseLayer
+            AddNewLayer(new EllipseLayer
             {
                 Width = 100,
                 Height = 100,
@@ -42,25 +36,29 @@ public class ShapeCommandButton : CommandButtonBase
         };
         void SetAcrylic(bool value)
         {
-            if (CurrentLayer is not Layers.ShapeLayer Layer) return;
+            if (CurrentLayer is not ShapeLayer Layer) return;
             var newColor = ShapeCommandBar.ColorPicker.Color;
-            LayerContainer.History.NewAction(new HistoryAction<(bool Old, bool New, LayerContainer LayerContainer, uint LayerId)>(
+            Layer.NewHistoryAction(LayerContainer.History, new HistoryAction<(bool Old, bool New, LayerContainer LayerContainer, uint LayerId)>(
                 (Layer.Acrylic, value, LayerContainer, Layer.LayerId),
                 Tag: this,
                 Undo: x =>
                 {
                     var (Old, _, LayerContainer, LayerId) = x;
-                    if (LayerContainer?.GetLayerFromId(LayerId) is Layers.ShapeLayer Layer)
+                    if (LayerContainer?.GetLayerFromId(LayerId) is ShapeLayer Layer)
                     {
                         Layer.Acrylic = Old;
+                        _ = Layer.UpdatePreviewAsync();
+                        InvokeLayerChange();
                     }
                 },
                 Redo: x =>
                 {
                     var (_, New, LayerContainer, LayerId) = x;
-                    if (LayerContainer?.GetLayerFromId(LayerId) is Layers.ShapeLayer Layer)
+                    if (LayerContainer?.GetLayerFromId(LayerId) is ShapeLayer Layer)
                     {
                         Layer.Acrylic = New;
+                        _ = Layer.UpdatePreviewAsync();
+                        InvokeLayerChange();
                     }
                 }
             ));
@@ -68,7 +66,7 @@ public class ShapeCommandButton : CommandButtonBase
         }
         ShapeCommandBar.Acrylic.Checked += delegate
         {
-            if (CurrentLayer is Layers.ShapeLayer ShapeLayer)
+            if (CurrentLayer is ShapeLayer ShapeLayer)
             {
                 SetAcrylic(true);
                 ShapeCommandBar.TintOpacityField.Value = ShapeLayer.TintOpacity * 100;
@@ -78,97 +76,122 @@ public class ShapeCommandButton : CommandButtonBase
         {
             SetAcrylic(false);
         };
-        ShapeCommandBar.ColorPicker.ColorChanged += delegate
-        {
-            if (CurrentLayer is not Layers.ShapeLayer Layer) return;
-            var newColor = ShapeCommandBar.ColorPicker.Color;
-            LayerContainer.History.NewAction(new HistoryAction<(Color Old, Color New, LayerContainer LayerContainer, uint LayerId)>(
-                (Layer.Color, newColor, LayerContainer, Layer.LayerId),
-                Tag: this,
-                Undo: x =>
-                {
-                    var (OldColor, _, LayerContainer, LayerId) = x;
-                    if (LayerContainer?.GetLayerFromId(LayerId) is Layers.ShapeLayer Layer)
-                    {
-                        Layer.Color = OldColor;
-                    }
-                },
-                Redo: x =>
-                {
-                    var (_, NewColor, LayerContainer, LayerId) = x;
-                    if (LayerContainer?.GetLayerFromId(LayerId) is Layers.ShapeLayer Layer)
-                    {
-                        Layer.Color = NewColor;
-                    }
-                }
-            ));
-            Layer.Color = newColor;
-        };
-        DateTime OpacityTime = DateTime.MinValue, TintOpacityTime = DateTime.MinValue;
+        DateTime OpacityTime = DateTime.MinValue, TintOpacityTime = DateTime.MinValue, ColorTime = DateTime.MinValue;
         HistoryActionMutable<(double Old, double New, LayerContainer LayerContainer, uint LayerId)>?
             OpacityHistoryAction = null, TintOpacityHistoryAction = null;
+        HistoryActionMutable<(Color Old, Color New, LayerContainer LayerContainer, uint LayerId)> ColorHistoryAction = null;
+        ShapeCommandBar.ColorPicker.ColorChanged += delegate
+        {
+            if (CurrentLayer is not ShapeLayer Layer) return;
+            var newColor = ShapeCommandBar.ColorPicker.Color;
+            if ((DateTime.Now - ColorTime).TotalSeconds > 2 || ColorHistoryAction is null)
+            {
+                ColorTime = DateTime.Now;
+                ColorHistoryAction = new HistoryActionMutable<(Color Old, Color New, LayerContainer LayerContainer, uint LayerId)>(
+                    (Layer.Color, newColor, LayerContainer, Layer.LayerId),
+                    Tag: this,
+                    Undo: x =>
+                    {
+                        var (OldColor, _, LayerContainer, LayerId) = x;
+                        if (LayerContainer?.GetLayerFromId(LayerId) is ShapeLayer Layer)
+                        {
+                            Layer.Color = OldColor;
+                            _ = Layer.UpdatePreviewAsync();
+                            InvokeLayerChange();
+                        }
+                    },
+                    Redo: x =>
+                    {
+                        var (_, NewColor, LayerContainer, LayerId) = x;
+                        if (LayerContainer?.GetLayerFromId(LayerId) is ShapeLayer Layer)
+                        {
+                            Layer.Color = NewColor;
+                            _ = Layer.UpdatePreviewAsync();
+                            InvokeLayerChange();
+                        }
+                    }
+                );
+                Layer.NewHistoryAction(LayerContainer.History, ColorHistoryAction);
+            }
+            Layer.Color = newColor;
+            var (a, b, c, d) = ColorHistoryAction.Param;
+            ColorHistoryAction.Param = (a, newColor, c, d);
+            _ = Layer.UpdatePreviewAsync();
+        };
         ShapeCommandBar.OpacityField.ValueChanged += delegate
         {
-            if (CurrentLayer is not Layers.ShapeLayer ShapeLayer) return;
+            if (CurrentLayer is not ShapeLayer ShapeLayer) return;
             if ((DateTime.Now - OpacityTime).TotalSeconds > 2 || OpacityHistoryAction is null)
             {
+                OpacityTime = DateTime.Now;
                 OpacityHistoryAction = new(
                     (ShapeLayer.Opacity, ShapeLayer.Opacity, LayerContainer, ShapeLayer.LayerId),
                     Tag: this,
                     Undo: x =>
                     {
                         var (Old, New, LC, LID) = x;
-                        if (LC.GetLayerFromId(LID) is Layers.ShapeLayer Layer)
-                            Layer.Opacity = Old;
+                        if (LC.GetLayerFromId(LID) is not ShapeLayer Layer) return;
+                        Layer.Opacity = Old;
+                        _ = Layer.UpdatePreviewAsync();
+                        InvokeLayerChange();
                     },
                     Redo: x =>
                     {
                         var (Old, New, LC, LID) = x;
-                        if (LC.GetLayerFromId(LID) is Layers.ShapeLayer Layer)
-                            Layer.Opacity = New;
+                        if (LC.GetLayerFromId(LID) is not ShapeLayer Layer) return;
+                        Layer.Opacity = New;
+                        _ = Layer.UpdatePreviewAsync();
+                        InvokeLayerChange();
                     }
                 );
-                LayerContainer.History.NewAction(OpacityHistoryAction);
+                ShapeLayer.NewHistoryAction(LayerContainer.History, OpacityHistoryAction);
             }
             ShapeLayer.Opacity = ShapeCommandBar.OpacityField.Value / 100;
             var (a, b, c, d) = OpacityHistoryAction.Param;
             OpacityHistoryAction.Param = (a, ShapeLayer.Opacity, c, d);
+            _ = ShapeLayer.UpdatePreviewAsync();
         };
         ShapeCommandBar.TintOpacityField.ValueChanged += delegate
         {
-            if (CurrentLayer is not Layers.ShapeLayer ShapeLayer) return;
+            if (CurrentLayer is not ShapeLayer ShapeLayer) return;
             if ((DateTime.Now - TintOpacityTime).TotalSeconds > 2 || TintOpacityHistoryAction is null)
             {
+                TintOpacityTime = DateTime.Now;
                 TintOpacityHistoryAction = new(
                     (ShapeLayer.TintOpacity, ShapeLayer.TintOpacity, LayerContainer, ShapeLayer.LayerId),
                     Tag: this,
                     Undo: x =>
                     {
                         var (Old, New, LC, LID) = x;
-                        if (LC.GetLayerFromId(LID) is Layers.ShapeLayer Layer)
-                            Layer.TintOpacity = Old;
+                        if (LC.GetLayerFromId(LID) is not ShapeLayer Layer) return;
+                        Layer.TintOpacity = Old;
+                        _ = Layer.UpdatePreviewAsync();
+                        InvokeLayerChange();
                     },
                     Redo: x =>
                     {
                         var (Old, New, LC, LID) = x;
-                        if (LC.GetLayerFromId(LID) is Layers.ShapeLayer Layer)
-                            Layer.TintOpacity = New;
+                        if (LC.GetLayerFromId(LID) is not ShapeLayer Layer) return;
+                        Layer.TintOpacity = New;
+                        _ = Layer.UpdatePreviewAsync();
+                        InvokeLayerChange();
                     }
                 );
-                LayerContainer.History.NewAction(TintOpacityHistoryAction);
+                ShapeLayer.NewHistoryAction(LayerContainer.History, TintOpacityHistoryAction);
             }
             ShapeLayer.TintOpacity = ShapeCommandBar.OpacityField.Value / 100;
             var (a, b, c, d) = TintOpacityHistoryAction.Param;
             TintOpacityHistoryAction.Param = (a, ShapeLayer.TintOpacity, c, d);
+            _ = ShapeLayer.UpdatePreviewAsync();
         };
     }
-    protected override void LayerChanged(Layers.Layer? Layer)
+    protected override void LayerChanged(Layer? Layer)
     {
         base.LayerChanged(Layer);
         if (Layer == null) return;
         ShapeCommandBar.LayerEditorControls.Visibility =
-            Layer is Layers.ShapeLayer ? Visibility.Visible : Visibility.Collapsed;
-        if (Layer is Layers.ShapeLayer ShapeLayer)
+            Layer is ShapeLayer ? Visibility.Visible : Visibility.Collapsed;
+        if (Layer is ShapeLayer ShapeLayer)
         {
             ShapeCommandBar.Acrylic.IsChecked = ShapeLayer.Acrylic;
             ShapeCommandBar.ColorPicker.Color = ShapeLayer.Color;

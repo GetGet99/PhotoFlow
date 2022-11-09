@@ -41,13 +41,13 @@ public class TextCommandButton : CommandButtonBase
             var (a, b, c, d) = TextChangingHistoryAction.Param;
             TextChangingHistoryAction.Param = (a, Layer.Text, c, d);
         };
-        TextCommandBar.Font.TextChanged += (_, e) =>
+        TextCommandBar.Font.TextChanged += (_1, e) =>
         {
             if (e.Reason == AutoSuggestionBoxTextChangeReason.SuggestionChosen)
             {
                 if (CurrentLayer is not Layers.TextLayer Layer) return;
                 var newFont = new FontFamily(TextCommandBar.Font.Text);
-                LayerContainer.History.NewAction(new HistoryAction<(FontFamily Old, FontFamily New, LayerContainer LayerContainer, uint LayerId)>(
+                Layer.NewHistoryAction(LayerContainer.History, new HistoryAction<(FontFamily Old, FontFamily New, LayerContainer LayerContainer, uint LayerId)>(
                     (Layer.Font, newFont, LayerContainer, Layer.LayerId),
                     Tag: this,
                     Undo: x =>
@@ -56,6 +56,8 @@ public class TextCommandButton : CommandButtonBase
                         if (LayerContainer?.GetLayerFromId(LayerId) is Layers.TextLayer TextLayer)
                         {
                             TextLayer.Font = OldFont;
+                            _ = TextLayer.UpdatePreviewAsync();
+                            InvokeLayerChange();
                         }
                     },
                     Redo: x =>
@@ -64,17 +66,19 @@ public class TextCommandButton : CommandButtonBase
                         if (LayerContainer?.GetLayerFromId(LayerId) is Layers.TextLayer TextLayer)
                         {
                             TextLayer.Font = NewFont;
+                            _ = TextLayer.UpdatePreviewAsync();
+                            InvokeLayerChange();
                         }
                     }
                 ));
                 Layer.Font = newFont;
             }
         };
-        TextCommandBar.FontSize.ValueChanged += (_, e) =>
+        TextCommandBar.FontSize.ValueChanged += (_1, e) =>
         {
             if (CurrentLayer is not Layers.TextLayer Layer) return;
             var newSize = TextCommandBar.FontSize.Value;
-            LayerContainer.History.NewAction(new HistoryAction<(double? Old, double? New, LayerContainer LayerContainer, uint LayerId)>(
+            Layer.NewHistoryAction(LayerContainer.History, new HistoryAction<(double? Old, double? New, LayerContainer LayerContainer, uint LayerId)>(
                 (Layer.FontSize, newSize, LayerContainer, Layer.LayerId),
                 Tag: this,
                 Undo: x =>
@@ -83,6 +87,8 @@ public class TextCommandButton : CommandButtonBase
                     if (LayerContainer?.GetLayerFromId(LayerId) is Layers.TextLayer TextLayer)
                     {
                         TextLayer.FontSize = OldSize;
+                        _ = TextLayer.UpdatePreviewAsync();
+                        InvokeLayerChange();
                     }
                 },
                 Redo: x =>
@@ -91,6 +97,8 @@ public class TextCommandButton : CommandButtonBase
                     if (LayerContainer?.GetLayerFromId(LayerId) is Layers.TextLayer TextLayer)
                     {
                         TextLayer.FontSize = NewSize;
+                        _ = TextLayer.UpdatePreviewAsync();
+                        InvokeLayerChange();
                     }
                 }
             ));
@@ -100,7 +108,7 @@ public class TextCommandButton : CommandButtonBase
         {
             if (CurrentLayer is not Layers.TextLayer Layer) return;
             var newColor = TextCommandBar.ColorPicker.Color;
-            LayerContainer.History.NewAction(new HistoryAction<(Color Old, Color New, LayerContainer LayerContainer, uint LayerId)>(
+            Layer.NewHistoryAction(LayerContainer.History, new HistoryAction<(Color Old, Color New, LayerContainer LayerContainer, uint LayerId)>(
                 (Layer.TextColor, newColor, LayerContainer, Layer.LayerId),
                 Tag: this,
                 Undo: x =>
@@ -109,6 +117,8 @@ public class TextCommandButton : CommandButtonBase
                     if (LayerContainer?.GetLayerFromId(LayerId) is Layers.TextLayer TextLayer)
                     {
                         TextLayer.TextColor = OldColor;
+                        _ = TextLayer.UpdatePreviewAsync();
+                        InvokeLayerChange();
                     }
                 },
                 Redo: x =>
@@ -117,6 +127,8 @@ public class TextCommandButton : CommandButtonBase
                     if (LayerContainer?.GetLayerFromId(LayerId) is Layers.TextLayer TextLayer)
                     {
                         TextLayer.TextColor = NewColor;
+                        _ = TextLayer.UpdatePreviewAsync();
+                        InvokeLayerChange();
                     }
                 }
             ));
@@ -135,6 +147,8 @@ public class TextCommandButton : CommandButtonBase
                 if (LayerContainer?.GetLayerFromId(LayerId) is Layers.TextLayer TextLayer)
                 {
                     TextLayer.Text = oldText;
+                    _ = TextLayer.UpdatePreviewAsync();
+                    InvokeLayerChange();
                 }
             },
             Redo: x =>
@@ -143,10 +157,12 @@ public class TextCommandButton : CommandButtonBase
                 if (LayerContainer?.GetLayerFromId(LayerId) is Layers.TextLayer TextLayer)
                 {
                     TextLayer.Text = newText;
+                    _ = TextLayer.UpdatePreviewAsync();
+                    InvokeLayerChange();
                 }
             }
         );
-        LayerContainer.History.NewAction(TextChangingHistoryAction);
+        Layer.NewHistoryAction(LayerContainer.History, TextChangingHistoryAction);
 
 
     }
@@ -155,7 +171,7 @@ public class TextCommandButton : CommandButtonBase
         base.LayerChanged(Layer);
         if (Layer == null) return;
         TextCommandBar.LayerEditorControls.Visibility =
-            Layer.LayerType == PhotoFlow.Layers.Types.Text ? Visibility.Visible : Visibility.Collapsed;
+            Layer.LayerType == Layers.Types.Text ? Visibility.Visible : Visibility.Collapsed;
         if (Layer is Layers.TextLayer TextLayer)
         {
             TextCommandBar.TextBox.Text = TextLayer.Text;
@@ -179,6 +195,7 @@ class Text : CommandButtonCommandBar
         const VerticalAlignment Center = VerticalAlignment.Center;
         Children.Add(new Button
         {
+            Style = App.IconButtonStyle,
             Content = new SymbolIcon(Symbol.Add),
             Margin = new Thickness(0, 0, 10, 0)
         }.Edit(x => ToolTipService.SetToolTip(x, "Add New Text Layer")).Assign(out CreateNewLayer));

@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using PhotoFlow.Layers;
 using System;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -24,6 +25,17 @@ public sealed partial class LayerPreview : IDisposable
             if (target is null) return;
             target.Value = target.Value == Layer.Index ? -1 : Layer.Index;
         };
+        ButtonOverlay.IsHoldingEnabled = true;
+        //ButtonOverlay.Holding += async (_, e) =>
+        //{
+        //    e.Handled = true;
+        //    await new ContentDialog
+        //    {
+        //        Title = "Hold",
+        //        Content = "Hold Detected",
+        //        PrimaryButtonText = "Okay"
+        //    }.ShowAsync();
+        //};
     }
     public string LayerName { get => LayerNameTextBlock.Text; set => LayerNameTextBlock.Text = value; }
     public ImageSource? PreviewImage { get => Image.Source; set => Image.Source = value; }
@@ -107,5 +119,22 @@ public sealed partial class LayerPreview : IDisposable
     {
         Layer.Visible = false;
         RightClickCommand.Hide();
+    }
+
+    private void CreateShadowClone(object sender, RoutedEventArgs e)
+    {
+        RightClickCommand.Hide();
+        if (Layer is ShadowCloneLayer)
+        {
+            Layer.Duplicate();
+            return;
+        }
+        Layer.InsertAboveSelf(new ShadowCloneLayer(Layer)
+        {
+            LayerName =
+            {
+                Value = $"{Layer.LayerName.Value} (Shadow Clone)"
+            }
+        });
     }
 }

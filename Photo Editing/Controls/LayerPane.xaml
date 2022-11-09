@@ -23,21 +23,11 @@
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <TextBlock Grid.Column="0" FontSize="15" Text="{x:Bind Title}" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
-        <Button x:FieldModifier="Public" x:Name="MoveLayerUp" Grid.Column="1" Width="50" Height="50">
-            <SymbolIcon Symbol="Up" Width="30" Height="30" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-            <Button.RenderTransform>
-                <CompositeTransform CenterX="25" CenterY="25" ScaleX="0.75" ScaleY="0.75"/>
-            </Button.RenderTransform>
+        <Button x:FieldModifier="Public" x:Name="MoveLayerUp" Grid.Column="1" Style="{StaticResource IconButtonStyle}">
+            <SymbolIcon Symbol="{x:Bind UpArrow, Mode=OneWay}"/>
         </Button>
-        <Button x:FieldModifier="Public" x:Name="MoveLayerDown" Grid.Column="2" Width="50" Height="50">
-            <SymbolIcon Symbol="Up" Width="30" Height="30" VerticalAlignment="Center" HorizontalAlignment="Center">
-                <SymbolIcon.RenderTransform>
-                    <CompositeTransform CenterX="15" CenterY="15" Rotation="180"/>
-                </SymbolIcon.RenderTransform>
-            </SymbolIcon>
-            <Button.RenderTransform>
-                <CompositeTransform CenterX="25" CenterY="25" ScaleX="0.75" ScaleY="0.75"/>
-            </Button.RenderTransform>
+        <Button Margin="10,0,0,0" x:FieldModifier="Public" x:Name="MoveLayerDown" Grid.Column="2" Style="{StaticResource IconButtonStyle}">
+            <SymbolIcon Symbol="{x:Bind DownArrow, Mode=OneWay}"/>
         </Button>
     </Grid>
     <ScrollViewer

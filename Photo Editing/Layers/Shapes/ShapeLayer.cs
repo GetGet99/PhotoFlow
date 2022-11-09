@@ -60,7 +60,7 @@ public abstract class ShapeLayer : Layer
     {
     }
     public override void Dispose() { }
-    protected override JObject OnDataSaving()
+    protected override JObject OnDataSaving(bool Runtime)
     {
         bool Acrylic = false;
         Color Color = default;

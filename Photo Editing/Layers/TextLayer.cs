@@ -12,6 +12,7 @@ namespace PhotoFlow.Layers;
 
 public class TextLayer : Layer
 {
+    public override UIElement UIElementDirect => TextBlock;
     public override Types LayerType { get; } = Types.Text;
     public TextBlock TextBlock { get; private set; }
     string? _Text;
@@ -95,7 +96,7 @@ public class TextLayer : Layer
     }
 #pragma warning restore CS8774
     public override void Dispose() { }
-    protected override JObject OnDataSaving()
+    protected override JObject OnDataSaving(bool Runtime)
     {
         string? Text = "", FontFamily = "";
         double? FontSize = default;

@@ -60,7 +60,7 @@ namespace PhotoFlow
         void RecordNewTransformAction(LayerTransform Old, LayerTransform New)
         {
             if (!CurrentLayer.IsNotNull(out var layer)) return;
-            LayerContainer.History.NewAction(new HistoryAction<(LayerTransform Old, LayerTransform New)>(
+            layer.NewHistoryAction(LayerContainer.History, new HistoryAction<(LayerTransform Old, LayerTransform New)>(
                 (Old, New),
                 Tag: this,
                 Undo: x =>
@@ -216,19 +216,21 @@ namespace PhotoFlow
             ScrollViewer.VerticalScrollMode = ScrollMode.Enabled;
             ScrollViewer.ZoomMode = ZoomMode.Enabled;
             Layer.LayerUIElement.IsHitTestVisible = false;
-            ScrollViewer.PointerReleased += delegate
-            {
-                ScrollViewer.HorizontalScrollMode = ScrollMode.Disabled;
-                ScrollViewer.VerticalScrollMode = ScrollMode.Disabled;
-                ScrollViewer.ZoomMode = ZoomMode.Disabled;
-                Layer.LayerUIElement.IsHitTestVisible = true;
-            };
+            
+            ScrollViewer.PointerReleased += SpacialScrollPointerReleased;
             Layer.LayerUIElement.ReleasePointerCapture(e.Pointer);
             ScrollViewer.CapturePointer(e.Pointer);
             e.Handled = false;
             return;
         }
-
+        void SpacialScrollPointerReleased(object _1, PointerRoutedEventArgs _2)
+        {
+            ScrollViewer.HorizontalScrollMode = ScrollMode.Disabled;
+            ScrollViewer.VerticalScrollMode = ScrollMode.Disabled;
+            ScrollViewer.ZoomMode = ZoomMode.Disabled;
+            if (CurrentLayer is not null)
+                CurrentLayer.LayerUIElement.IsHitTestVisible = true;
+        }
         void KeyDownHandle(CoreWindow C, KeyEventArgs e)
         {
             if (C.GetKeyState(VirtualKey.Shift) != CoreVirtualKeyStates.None && CurrentLayer != null)
@@ -288,6 +290,7 @@ namespace PhotoFlow
             Element.ManipulationDelta += ManipulationDeltaEvent;
             Element.ManipulationStarted += ManipulationStarted;
             Element.ManipulationCompleted += ManipulationCompletedEvent;
+
             //Element.PointerEntered += PointerEntered;
             //Element.PointerExited += PointerExited;
             //Element.PointerCaptureLost += PointerExited;
@@ -309,6 +312,7 @@ namespace PhotoFlow
             Element.ManipulationDelta -= ManipulationDeltaEvent;
             Element.ManipulationStarted -= ManipulationStarted;
             Element.ManipulationCompleted -= ManipulationCompletedEvent;
+            ScrollViewer.PointerReleased -= SpacialScrollPointerReleased;
             //Element.PointerEntered -= PointerEntered;
             //Element.PointerExited -= PointerExited;
             //Element.PointerCaptureLost -= PointerExited;
@@ -316,6 +320,9 @@ namespace PhotoFlow
             Window.Current.CoreWindow.KeyDown -= KeyDownHandle;
             Window.Current.CoreWindow.KeyUp -= KeyUpHandle;
             //CancelWheelIfKeyUp();
+            ScrollViewer.HorizontalScrollMode = ScrollMode.Enabled;
+            ScrollViewer.VerticalScrollMode = ScrollMode.Enabled;
+            ScrollViewer.ZoomMode = ZoomMode.Enabled;
         }
     }
     class LambdaCommand : System.Windows.Input.ICommand

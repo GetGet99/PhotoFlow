@@ -21,32 +21,17 @@ namespace PhotoFlow.Layers;
 
 public partial class InkingLayer : Layer
 {
+    Grid _UIElementDirect;
+    public override UIElement UIElementDirect => _UIElementDirect;
     readonly InkRefTracker InkRefTracker = new();
     public override Types LayerType { get; } = Types.Inking;
     public readonly VariableUpdateAlert<bool> TouchAllowed = new(false);
     public readonly VariableUpdateAlert<bool> DrawingAllowed = new(false);
     static readonly SolidColorBrush SelectionColor = BorderColor;
-    readonly Canvas Canvas = new()
-    {
-        
-    };
-    readonly Polygon SelectionPolygon = new()
-    {
-        Stroke = SelectionColor,
-        StrokeThickness = 1,
-        StrokeDashArray = new DoubleCollection() { 5, 2 },
-        IsHitTestVisible = false
-    };
-    readonly Rectangle SelectionRectangle = new()
-    {
-        Visibility = Visibility.Collapsed,
-        StrokeThickness = 1,
-        StrokeDashArray = new DoubleCollection() { 5, 2 },
-        Fill = new SolidColorBrush(Colors.Transparent),
-        ManipulationMode = ManipulationModes.TranslateX | ManipulationModes.TranslateY,
-        IsHitTestVisible = true
-    };
-    readonly CompositeTransform SelectionRenderTransform = new();
+    Canvas Canvas;
+    Polygon SelectionPolygon;
+    Rectangle SelectionRectangle;
+    CompositeTransform SelectionRenderTransform;
     public InkCanvas InkCanvas { get; private set; }
     InkCanvas BackgroundInkCanvas { get; set; }
     public InkingLayer(Rect Where)
@@ -65,24 +50,52 @@ public partial class InkingLayer : Layer
         CompleteCreate();
     }
     Point LatestMouse = new();
-    [MemberNotNull(nameof(InkCanvas), nameof(BackgroundInkCanvas))]
+    [MemberNotNull(nameof(InkCanvas), nameof(BackgroundInkCanvas), nameof(_UIElementDirect), nameof(Canvas), nameof(SelectionPolygon), nameof(SelectionRectangle))]
     protected override void OnCreate()
     {
         TouchAllowed.Update += (oldValue, newValue) => UpdateInkingDeviceOnUIThread();
         DrawingAllowed.Update += (oldValue, newValue) => UpdateInkingDeviceOnUIThread();
         Extension.RunOnUIThread(() =>
         {
-            BackgroundInkCanvas = new InkCanvas();
-            InkCanvas = new InkCanvas()
+            BackgroundInkCanvas = new();
+            InkCanvas = new()
             {
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch,
                 CanBeScrollAnchor = false
             };
-            LayerUIElement.Children.Add(InkCanvas);
+            Canvas = new()
+            {
+
+            };
+            SelectionPolygon = new()
+            {
+                Stroke = SelectionColor,
+                StrokeThickness = 1,
+                StrokeDashArray = new DoubleCollection() { 5, 2 },
+                IsHitTestVisible = false
+            };
+            SelectionRectangle = new()
+            {
+                Visibility = Visibility.Collapsed,
+                StrokeThickness = 1,
+                StrokeDashArray = new DoubleCollection() { 5, 2 },
+                Fill = new SolidColorBrush(Colors.Transparent),
+                ManipulationMode = ManipulationModes.TranslateX | ManipulationModes.TranslateY,
+                IsHitTestVisible = true
+            };
+            SelectionRenderTransform = new();
+            LayerUIElement.Children.Add(_UIElementDirect = new Grid
+            {
+                Children =
+                {
+                    InkCanvas,
+                    Canvas
+                }
+            });
             Canvas.Children.Add(SelectionPolygon);
             Canvas.Children.Add(SelectionRectangle);
-            LayerUIElement.Children.Add(Canvas);
+            //LayerUIElement.Children.Add();
 
             InkCanvas.InkPresenter.StrokesCollected += (o, e) =>
             {
@@ -146,7 +159,7 @@ public partial class InkingLayer : Layer
         //InkRefTracker.Dispose();
         Extension.RunOnUIThread(() => InkCanvas!.InkPresenter.StrokeContainer.Clear());
     }
-    protected override JObject OnDataSaving()
+    protected override JObject OnDataSaving(bool Runtime)
     {
         async Task<JObject> func()
         {
@@ -189,7 +202,7 @@ public partial class InkingLayer : Layer
     void RecordDeleteAction(InkRef[] AddedInks)
     {
         if (LayerContainer is null) return;
-        History?.NewAction(new HistoryAction<(LayerContainer LayerContainer, uint LayerId, InkRef[] Inks)>(
+        NewHistoryAction(LayerContainer.History, new HistoryAction<(LayerContainer LayerContainer, uint LayerId, InkRef[] Inks)>(
             (LayerContainer, LayerId, AddedInks),
             Tag: this,
             Undo: x =>
@@ -223,7 +236,7 @@ public partial class InkingLayer : Layer
     void RecordAddAction(InkRef[] AddedInks)
     {
         if (LayerContainer is null) return;
-        History?.NewAction(new HistoryAction<(LayerContainer LayerContainer, uint LayerId, InkRef[] Inks)>(
+        NewHistoryAction(LayerContainer.History, new HistoryAction<(LayerContainer LayerContainer, uint LayerId, InkRef[] Inks)>(
             (LayerContainer, LayerId, AddedInks),
             Tag: this,
             Undo: x =>

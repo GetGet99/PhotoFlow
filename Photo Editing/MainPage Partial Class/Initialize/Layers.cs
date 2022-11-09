@@ -162,25 +162,27 @@ namespace PhotoFlow
 
         private async void Paste(object sender, RoutedEventArgs e)
         {
-            if (LayerContainer.Selection is Layers.Layer Layer && Layer.RequestPaste()) 
+            if (LayerContainer.Selection is Layer Layer && Layer.RequestPaste()) 
                 return;
             var data = Clipboard.GetContent();
             var layer = await data.ReadAsLayerAsync();
-            if (layer != null) LayerContainer.AddNewLayer(layer);
+            if (layer != null)
+            {
+                LayerContainer.AddNewLayer(layer);
+                layer.FinalizeLoad();
+            }
         }
         private void Delete(object sender, RoutedEventArgs e)
         {
-            if (LayerContainer.Selection is Layers.Layer Layer && Layer.RequestDelete())
-                return;
+            if (LayerContainer.Selection is not Layer Layer) return;
+            if (Layer.RequestDelete()) return;
             LayerContainer.Selection?.DeleteSelf();
         }
         private void Duplicate(object sender, RoutedEventArgs e)
         {
-            if (LayerContainer.Selection is Layers.Layer Layer && Layer.RequestDuplicate())
-                return;
-            var selection = LayerContainer.Selection;
-            if (selection == null) return;
-            LayerContainer.AddNewLayer(selection.DeepClone());
+            if (LayerContainer.Selection is not Layer Layer) return;
+            if (Layer.RequestDuplicate()) return;
+            Layer.Duplicate();
         }
     }
     partial class Extension

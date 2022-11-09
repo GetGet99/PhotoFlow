@@ -143,6 +143,8 @@ public partial class Extension
     }
     public static T DeepClone<T>(this T Layer) where T : Layers.Layer
     {
-        return ((T?)LayerContainer.LoadLayer(Layer.SaveData())) ?? throw new NullReferenceException();
+        var layer = ((T?)LayerContainer.LoadLayer(Layer.SaveData(Runtime: true), Runtime: true)) ?? throw new NullReferenceException();
+        layer.RequestSetNewId();
+        return layer;
     }
 }

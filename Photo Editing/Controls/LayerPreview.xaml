@@ -45,6 +45,7 @@
                     <AppBarButton Label="Duplicate" Icon="Copy" Click="Duplicate" AccessKey="D"/>
                     <AppBarButton Label="Rename" Icon="Rename" Click="Rename" AccessKey="R"/>
                     <AppBarButton x:Name="SendToPhotoToys" Label="Send To PhotoToys" Icon="Send" Click="Send2PhotoToys" Visibility="Collapsed" AccessKey="P"/>
+                    <AppBarButton Label="Create Shadow Clone" Icon="SetLockScreen" Click="CreateShadowClone"  AccessKey="I"/>
                     <AppBarButton Label="Convert To Image" Icon="SetLockScreen" Click="ToMatLayer" AccessKey="I"/>
                     <AppBarButton Label="Save as Image" Icon="Save" Click="SaveLayerAsImage" AccessKey="S"/>
                 </CommandBarFlyout.SecondaryCommands>

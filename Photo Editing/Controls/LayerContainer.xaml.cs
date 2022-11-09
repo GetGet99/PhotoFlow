@@ -276,29 +276,34 @@ public sealed partial class LayerContainer : Panel
         var layertype = JSON["LayerType"]?.ToObject<Layers.Types>();
         return layertype switch
         {
-            PhotoFlow.Layers.Types.Background => null, // Deprecated Layer
-            PhotoFlow.Layers.Types.Inking => new Layers.InkingLayer(JSON, Runtime),
-            PhotoFlow.Layers.Types.Mat => new Layers.MatLayer(JSON, Runtime),
-            PhotoFlow.Layers.Types.Text => new Layers.TextLayer(JSON, Runtime),
-            PhotoFlow.Layers.Types.RectangleShape => new Layers.RectangleLayer(JSON, Runtime),
-            PhotoFlow.Layers.Types.EllipseShape => new Layers.EllipseLayer(JSON, Runtime),
+            Types.Background => null, // Deprecated Layer
+            Types.Inking => new InkingLayer(JSON, Runtime),
+            Types.Mat => new MatLayer(JSON, Runtime),
+            Types.Text => new TextLayer(JSON, Runtime),
+            Types.RectangleShape => new RectangleLayer(JSON, Runtime),
+            Types.EllipseShape => new EllipseLayer(JSON, Runtime),
+            Types.ShadowClone => new ShadowCloneLayer(JSON, Runtime),
             _ => throw new NotImplementedException(),
         };
     }
     public async Task LoadAndReplace(JObject json)
     {
-        Width = json["Width"]?.ToObject<double>() ?? throw new FormatException("Error Reading File: Canvas Width does not exist");
-        Height = json["Height"]?.ToObject<double>() ?? throw new FormatException("Error Reading File: Canvas Height does not exist");
+        var Width = json["Width"]?.ToObject<double>() ?? throw new FormatException("Error Reading File: Canvas Width does not exist");
+        var Height = json["Height"]?.ToObject<double>() ?? throw new FormatException("Error Reading File: Canvas Height does not exist");
         Layers.Clear();
-
+        ImageSize = new(Width, Height);
         var TaskLayers = json["Layers"]?.ToObject<JObject[]>().ForEachParallel(x => LoadLayer(x));
         if (TaskLayers != null)
         {
             var layers = await TaskLayers;
             if (layers != null)
+            {
                 foreach (var Layer in layers)
                     if (Layer != null) Layers.Add(Layer);
+                foreach (var Layer in layers) Layer?.FinalizeLoad();
+            }
         }
+
     }
     public void Clear()
     {

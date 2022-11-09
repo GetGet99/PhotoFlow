@@ -187,6 +187,7 @@ public class InkingCommandButton : CommandButtonBase
         {
             Children.Add(CreateNewLayer = new Button
             {
+                Style = App.IconButtonStyle,
                 Content = new SymbolIcon(Symbol.Add),
                 Margin = DefaultMargin
             }.Edit(x => ToolTipService.SetToolTip(x, "Add New Drawing Layer")));
@@ -271,12 +272,14 @@ public class InkingCommandButton : CommandButtonBase
             Children.Add(CreateColorButton(15));
             Children.Add(Undo = new Button
             {
+                Style = App.IconButtonStyle,
                 Margin = new Thickness(0, 0, 10, 0),
                 Content = new SymbolIcon(Symbol.Undo)
             });
 
             Children.Add(Redo = new Button
             {
+                Style = App.IconButtonStyle,
                 Margin = new Thickness(0, 0, 10, 0),
                 Content = new SymbolIcon(Symbol.Redo)
             });
