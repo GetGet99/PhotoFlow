@@ -1,6 +1,9 @@
 ﻿#nullable enable
+using Microsoft.Graphics.Canvas.Effects;
+using Microsoft.Toolkit.Uwp.UI;
 using PhotoFlow.Layers;
 using System;
+using Windows.UI.Composition;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
@@ -16,8 +19,15 @@ public sealed partial class LayerPreview : IDisposable
         Layer = YourLayer;
         InitializeComponent();
         VisibleButton.IsChecked = YourLayer.Visible;
-        Image.Source = null;
-
+        //var elemenet = YourLayer.UIElementDirect;
+        //var visual = elemenet.GetVisual();
+        //var compositor = visual.Compositor;
+        //var surface = compositor.CreateVisualSurface();
+        //surface.SourceVisual = visual;
+        //var combrush = compositor.CreateSurfaceBrush(surface);
+        //combrush.Stretch = CompositionStretch.UniformToFill;
+        //var brush = new XamlCompositionBrush(combrush);
+        //UIDisplay.Background = brush;
         if (YourLayer is Layers.MatLayer)
             SendToPhotoToys.Visibility = Visibility.Visible;
         ButtonOverlay.Click += delegate {
@@ -38,7 +48,7 @@ public sealed partial class LayerPreview : IDisposable
         //};
     }
     public string LayerName { get => LayerNameTextBlock.Text; set => LayerNameTextBlock.Text = value; }
-    public ImageSource? PreviewImage { get => Image.Source; set => Image.Source = value; }
+    // public ImageSource? PreviewImage { get => Image.Source; set => Image.Source = value; }
 
     private async void Rename(object sender, RoutedEventArgs e)
     {
@@ -54,9 +64,7 @@ public sealed partial class LayerPreview : IDisposable
     private async void SaveLayerAsImage(object sender, RoutedEventArgs e)
     {
         RightClickCommand.Hide();
-        Layer.DisablePreviewEffects();
-        await FileManagement.SaveFile(await Layer.LayerUIElement.ToByteArrayImaegPngAsync() ?? Array.Empty<byte>());
-        Layer.EnablePreviewEffects();
+        await FileManagement.ExportLayer(Layer);
     }
     private void ToMatLayer(object sender, RoutedEventArgs e)
     {
@@ -136,5 +144,12 @@ public sealed partial class LayerPreview : IDisposable
                 Value = $"{Layer.LayerName.Value} (Shadow Clone)"
             }
         });
+    }
+}
+public class XamlCompositionBrush : XamlCompositionBrushBase
+{
+    public XamlCompositionBrush(CompositionBrush CompositionBrush)
+    {
+        this.CompositionBrush = CompositionBrush;
     }
 }

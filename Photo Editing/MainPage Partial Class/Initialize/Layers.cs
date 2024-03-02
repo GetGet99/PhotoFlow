@@ -41,7 +41,7 @@ namespace PhotoFlow
             LayerContainerSizeMaintainer.Width = ow * cos + oh * sin;
             LayerContainerSizeMaintainer.Height = ow * sin + oh * cos;
             var rotdeg = LayerContaineCompositeTransformr.Rotation;
-            RotationText.Text = (rotdeg > 180 ? rotdeg - 360 : rotdeg).ToString();
+            RotationText.Value = (rotdeg > 180 ? rotdeg - 360 : rotdeg);
         }
         void ImplementingLayersThing()
         {

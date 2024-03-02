@@ -1,8 +1,7 @@
 .vs
-CSharpUI/bin
-CSharpUI/obj
-Photo Editing/bin
-Photo Editing/obj
+Canvas.*
+*/bin
+*/obj
 Photo Editing/AppPackages
 Photo Editing/BundleArtifacts
 Photo Editing/Package.StoreAssociation.xml

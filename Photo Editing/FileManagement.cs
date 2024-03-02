@@ -1,11 +1,14 @@
 ﻿#nullable enable
 using OpenCvSharp;
+using PhotoFlow.Layers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.UI.Input.Inking;
 
 namespace PhotoFlow
 {
@@ -60,6 +63,43 @@ namespace PhotoFlow
 
 
             return (file.FileType, bytes);
+        }
+        public static async Task<bool> ExportLayer(Layer Layer)
+        {
+            Layer.DisablePreviewEffects();
+            if (Layer is InkingLayer inkingLayer) return await ExportInkingLayer(inkingLayer);
+            var @out = await SaveFile(await Layer.LayerUIElement.ToByteArrayImaegPngAsync() ?? Array.Empty<byte>());
+            Layer.EnablePreviewEffects();
+            return @out;
+        }
+        static async Task<bool> ExportInkingLayer(InkingLayer Layer)
+        {
+            var picker = new Windows.Storage.Pickers.FileSavePicker
+            {
+                SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary
+            };
+            picker.FileTypeChoices.Add("PNG", new List<string>() { ".png" });
+            picker.FileTypeChoices.Add("SVG", new List<string>() { ".svg" });
+            Windows.Storage.StorageFile file = await picker.PickSaveFileAsync();
+            if (file == null) return false;
+            else
+            {
+                Windows.Storage.CachedFileManager.DeferUpdates(file);
+                switch (file.FileType)
+                {
+                    case ".png":
+                        await Windows.Storage.FileIO.WriteBytesAsync(file, await Layer.LayerUIElement.ToByteArrayImaegPngAsync());
+                        break;
+                    case ".svg":
+                        var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.ReadWrite);
+                        stream.Size = 0;
+                        await Ink2Svg.ConvertInkToSVG(Layer.InkCanvas.InkPresenter, (float)Layer.Width, (float)Layer.Height).SaveAsync(stream);
+                        stream.Dispose();
+                        break;
+                }
+                GC.Collect();
+                return true;
+            }
         }
         public static async Task<bool> SaveFile(Mat mat)
         {

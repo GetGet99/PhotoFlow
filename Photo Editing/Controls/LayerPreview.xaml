@@ -13,7 +13,7 @@
         <ColumnDefinition Width="50"/>
         <ColumnDefinition Width="*"/>
     </Grid.ColumnDefinitions>
-    <Image x:Name="Image" Grid.Column="0" Margin="8"/>
+    <Grid x:Name="UIDisplay" Grid.Column="0" Margin="8"/>
     <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal">
         <TextBlock x:Name="LayerNameTextBlock" HorizontalAlignment="Left" Text="Layer Name" Margin="0,0,8,0"/>
     </StackPanel>

@@ -260,9 +260,9 @@
                 %
             </TextBlock>
             <TextBlock VerticalAlignment="Center" Text="Rotation:" Margin="10,0,3,0"/>
-            <TextBlock x:Name="RotationText" VerticalAlignment="Center">
-                0
-            </TextBlock>
+            <Slider x:Name="RotationText" VerticalAlignment="Center" Minimum="-180" Maximum="180" Value="0" Width="200">
+                
+            </Slider>
             <TextBlock VerticalAlignment="Center" Text=" degrees">
                 
             </TextBlock>

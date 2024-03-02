@@ -335,11 +335,11 @@ public abstract class Layer : ISaveable, ILayerTyping, IDisposable, INotifyPrope
         try
         {
             await Task.Run(
-                () => Extension.RunOnUIThread(async delegate
+                () => Extension.RunOnUIThread(delegate
                 {
                     try
                     {
-                        LayerPreview.PreviewImage = await UIElementDirect.ToRenderTargetBitmapAsync();
+                        //LayerPreview.PreviewImage = await UIElementDirect.ToRenderTargetBitmapAsync();
                         OnLayerPreviewUpdate?.Invoke();
                     }
                     catch

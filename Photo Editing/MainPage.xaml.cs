@@ -30,6 +30,16 @@ public sealed partial class MainPage : Page
             UpdateLayerContainerSizeAndRotation();
         });
         InitializeComponent();
+        RotationText.ValueChanged += delegate
+        {
+            LayerContaineCompositeTransformr.CenterX = LayerContainerBackground.ActualWidth / 2;
+            LayerContaineCompositeTransformr.CenterY = LayerContainerBackground.ActualHeight / 2;
+            if (LayerContaineCompositeTransformr.Rotation != RotationText.Value)
+            {
+                LayerContaineCompositeTransformr.Rotation = RotationText.Value;
+                UpdateLayerContainerSizeAndRotation();
+            }
+        };
         SetUpTitleBar();
         InitializeCommandButtons();
         ImplementZoomFunctionality();

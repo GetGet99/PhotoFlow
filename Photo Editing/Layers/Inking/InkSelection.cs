@@ -8,6 +8,7 @@ using System.Linq;
 using Windows.Foundation;
 using System.Collections.Generic;
 using Windows.UI.ViewManagement;
+using System.Numerics;
 
 namespace PhotoFlow.Layers;
 
@@ -22,6 +23,7 @@ partial class InkingLayer
         Point deltaManipulation = new();
         // Manipulation Event
         {
+            bool ResizingXStart = false, ResizingYStart = false, ResizingXEnd = false, ResizingYEnd = false;
             SelectionRectangle.ManipulationStarted += (_, e) =>
             {
                 e.Handled = true;
@@ -31,30 +33,86 @@ partial class InkingLayer
                     where x.Selected
                     select x
                 );
+
+                float ZoomFactor = LayerContainer?.ZoomFactor ?? 1;
+                var pos = e.Position;
+                var pixelThreshold = 30 / ZoomFactor;
+                ResizingXStart = pos.X <= pixelThreshold;
+                ResizingYStart = pos.Y <= pixelThreshold;
+                ResizingXEnd = pos.X >= SelectionRectangle.Width - pixelThreshold;
+                ResizingYEnd = pos.Y >= SelectionRectangle.Height - pixelThreshold;
             };
             SelectionRectangle.ManipulationDelta += (_, e) =>
             {
-                e.Handled = true;
                 float ZoomFactor = LayerContainer?.ZoomFactor ?? 1;
-                Point d = e.Delta.Translation;
-                double TwoPiOver360 = 2 * Math.PI / 360;
-                var sin = Math.Sin(Rotation * TwoPiOver360);
-                var cos = Math.Cos(Rotation * TwoPiOver360);
-                d = new Point(
-                    d.X * cos + d.Y * sin,
-                    d.X * sin + d.Y * cos
-                );
-                d.X /= ZoomFactor;
-                d.Y /= ZoomFactor;
+                e.Handled = true;
+                Point TransformTranslation(Point d)
+                {
+                    double TwoPiOver360 = 2 * Math.PI / 360;
+                    var sin = Math.Sin(Rotation * TwoPiOver360);
+                    var cos = Math.Cos(Rotation * TwoPiOver360);
+                    d = new Point(
+                        d.X * cos + d.Y * sin,
+                        d.X * sin + d.Y * cos
+                    );
+                    d.X /= ZoomFactor;
+                    d.Y /= ZoomFactor;
+                    return d;
+                }
+                //// Define the center point for scaling
+                //Matrix3x2 ScaleFromPoint(Vector2 centerPoint, float scaleX, float scaleY)
+                //{
+                //    // Create translation matrices for moving the center point to the origin and back
+                //    Matrix3x2 translateToOrigin = Matrix3x2.CreateTranslation(-centerPoint);
+                //    Matrix3x2 translateBack = Matrix3x2.CreateTranslation(centerPoint);
+
+                //    Matrix3x2 scalingMatrix = Matrix3x2.CreateScale(scaleX, scaleY);
+
+                //    // Combine transformations: Translate to origin, scale, and translate back
+                //    return translateToOrigin * scalingMatrix * translateBack;
+                //}
+                Point deltaTranslation = TransformTranslation(e.Delta.Translation);
+                //{
+                //    var doStuff = false;
+                //    double dx = 0, dy = 0, pivotX = 0, pivotY = 0;
+                //    if (ResizingXStart)
+                //    {
+                //        pivotX = 0;
+                //        dx = deltaTranslation.X / ZoomFactor;
+                //        doStuff = true;
+                //    }
+                //    if (ResizingYStart)
+                //    {
+                //        pivotY = 0;
+                //        dy = deltaTranslation.Y / ZoomFactor;
+                //        doStuff = true;
+                //    }
+                //    if (ResizingXEnd)
+                //    {
+                //        pivotX = SelectionRectangle.Translation.X + SelectionRectangle.Width;
+                //        dx = deltaTranslation.X / ZoomFactor;// / layer.ScaleX;
+                //        doStuff = true;
+                //    }
+                //    if (ResizingYEnd)
+                //    {
+                //        pivotX = SelectionRectangle.Translation.Y + SelectionRectangle.Height;
+                //        dy = deltaTranslation.Y / ZoomFactor;// / layer.ScaleY;
+                //        doStuff = true;
+                //    }
+                //    if (doStuff)
+                //        goto End;
+                //}
 
                 var SelectionBounds = this.SelectionBounds;
                 //Point newPos = new(SelectionBounds.X + d.X, SelectionBounds.Y + d.Y);
-                deltaManipulation = new(deltaManipulation.X + d.X, deltaManipulation.Y + d.Y);
+                deltaManipulation = new(deltaManipulation.X + deltaTranslation.X, deltaManipulation.Y + deltaTranslation.Y);
                 //var newBounds = new Windows.Foundation.Rect(newPos,
                 //    new Size(SelectionBounds.Width, SelectionBounds.Height));
                 UpdateInkSelectionRectangle(
-                    InkCanvas.InkPresenter.StrokeContainer.MoveSelected(d)
+                    InkCanvas.InkPresenter.StrokeContainer.MoveSelected(deltaTranslation)
                 );
+            //End:
+            //    ;
             };
             SelectionRectangle.ManipulationCompleted += delegate
             {
