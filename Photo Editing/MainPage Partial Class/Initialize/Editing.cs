@@ -21,7 +21,7 @@ namespace PhotoFlow
     public static partial class Extension
     {
         const bool InPlaceDefault = false;
-        [return: NotNullIfNotNull("byteArray")]
+        [return: NotNullIfNotNull(nameof(byteArray))]
         public static BitmapImage? AsBitmapImage(this byte[]? byteArray)
         {
             if (byteArray == null) return null;
